@@ -1,0 +1,117 @@
+/* Standard includes. */
+#include <stdio.h>
+#include <stdbool.h>
+#include <math.h>
+#include "system.h"
+
+/* Scheduler includes. */
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/queue.h"
+
+/* The parameters passed to the reg test tasks.  This is just done to check
+ the parameter passing mechanism is working correctly. */
+#define mainREG_TEST_1_PARAMETER    ( ( void * ) 0x12345678 )
+#define mainREG_TEST_2_PARAMETER    ( ( void * ) 0x87654321 )
+#define mainREG_TEST_PRIORITY       ( tskIDLE_PRIORITY + 1)
+static void prvFirstRegTestTask(void *pvParameters);
+static void prvSecondRegTestTask(void *pvParameters);
+
+#define SAMPLING_FREQ_HZ 16000.0
+
+
+typedef struct
+{
+    unsigned int adcCount;
+} AdcCountMessage;
+
+typedef struct
+{
+    double frequencyHz;
+    double rocHzPerSec;
+} FreqRocMessage;
+
+typedef struct
+{
+    double thresholdFreqHz;
+    double thresholdRocHzPerSec;
+} ThresholdMessage;
+
+static QueueHandle_t Q_adcCount;
+static QueueHandle_t Q_newFreqToVGA;
+static QueueHandle_t Q_newFreqToMonitor;
+
+
+void FreqAnalyserISR(void *context)
+{
+    AdcCountMessage msg;
+
+    (void)context;
+
+    msg.adcCount = IORD(FREQUENCY_ANALYSER_BASE, 0);
+    xQueueSendToBackFromISR(Q_adcCount, &msg, NULL);
+}
+/*
+ * Create the demo tasks then start the scheduler.
+ */
+int main(void)
+{
+	/* The RegTest tasks as described at the top of this file. */
+	xTaskCreate( prvFirstRegTestTask, "Rreg1", configMINIMAL_STACK_SIZE, mainREG_TEST_1_PARAMETER, mainREG_TEST_PRIORITY, NULL);
+	xTaskCreate( prvSecondRegTestTask, "Rreg2", configMINIMAL_STACK_SIZE, mainREG_TEST_2_PARAMETER, mainREG_TEST_PRIORITY, NULL);
+
+	/* Finally start the scheduler. */
+	vTaskStartScheduler();
+
+	/* Will only reach here if there is insufficient heap available to start
+	 the scheduler. */
+	for (;;);
+}
+static void prvFirstRegTestTask(void *pvParameters)
+{
+
+    AdcCountMessage inMsg;
+    FreqRocMessage outMsg;
+    double prevFreq = 0.0;
+    bool first = true;
+
+    (void)pvParameters;
+
+    for (;;)
+    {
+        if (xQueueReceive(Q_adcCount, &inMsg, portMAX_DELAY) == pdPASS)
+        {
+            if (inMsg.adcCount == 0)
+            {
+                continue;
+            }
+
+            outMsg.frequencyHz = SAMPLING_FREQ_HZ / (double)inMsg.adcCount;
+
+            if (first)
+            {
+                outMsg.rocHzPerSec = 0.0;
+                first = false;
+            }
+            else
+            {
+                double deltaT = (double)inMsg.adcCount / SAMPLING_FREQ_HZ;
+                outMsg.rocHzPerSec = (outMsg.frequencyHz - prevFreq) / deltaT;
+            }
+
+            prevFreq = outMsg.frequencyHz;
+
+            xQueueSendToBack(Q_newFreqToVGA, &outMsg, portMAX_DELAY);
+            xQueueSendToBack(Q_newFreqToMonitor, &outMsg, portMAX_DELAY);
+        }
+    }
+
+}
+static void prvSecondRegTestTask(void *pvParameters)
+{
+	while (1)
+	{
+		printf("Task 2\n");
+		vTaskDelay(1000);
+	}
+}

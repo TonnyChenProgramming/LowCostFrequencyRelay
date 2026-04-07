@@ -1,0 +1,9 @@
+14:25:49 **** Incremental Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+[LCFR build complete]
+
+14:25:49 Build Finished (took 535ms)
+

@@ -1,0 +1,31 @@
+13:22:55 **** Incremental Build of configuration Nios II for project FrequencyRelay ****
+make all 
+Info: Building ../FrequencyRelay_bsp/
+C:/intelFPGA/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../FrequencyRelay_bsp/
+[BSP build complete]
+Info: Compiling freertos/croutine.c to obj/default/freertos/croutine.o
+nios2-elf-gcc -xc -MP -MMD -c -I../FrequencyRelay_bsp//HAL/inc -I../FrequencyRelay_bsp/ -I../FrequencyRelay_bsp//drivers/inc  -pipe -D__hal__ -DALT_NO_INSTRUCTION_EMULATION -DALT_SINGLE_THREADED    -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o obj/default/freertos/croutine.o freertos/croutine.c
+Info: Compiling freertos/event_groups.c to obj/default/freertos/event_groups.o
+nios2-elf-gcc -xc -MP -MMD -c -I../FrequencyRelay_bsp//HAL/inc -I../FrequencyRelay_bsp/ -I../FrequencyRelay_bsp//drivers/inc  -pipe -D__hal__ -DALT_NO_INSTRUCTION_EMULATION -DALT_SINGLE_THREADED    -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o obj/default/freertos/event_groups.o freertos/event_groups.c
+Info: Compiling freertos/heap.c to obj/default/freertos/heap.o
+nios2-elf-gcc -xc -MP -MMD -c -I../FrequencyRelay_bsp//HAL/inc -I../FrequencyRelay_bsp/ -I../FrequencyRelay_bsp//drivers/inc  -pipe -D__hal__ -DALT_NO_INSTRUCTION_EMULATION -DALT_SINGLE_THREADED    -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o obj/default/freertos/heap.o freertos/heap.c
+freertos/heap.c:147:7: error: conflicting types for 'pvPortMalloc'
+ void *pvPortMalloc( size_t xWantedSize )
+       ^
+In file included from freertos/FreeRTOS.h:104:0,
+                 from freertos/heap.c:82:
+freertos/portable.h:163:7: note: previous declaration of 'pvPortMalloc' was here
+ void *pvPortMalloc( size_t xSize ) PRIVILEGED_FUNCTION;
+       ^
+freertos/heap.c:262:8: error: conflicting types for 'xPortGetFreeHeapSize'
+ size_t xPortGetFreeHeapSize( void )
+        ^
+In file included from freertos/FreeRTOS.h:104:0,
+                 from freertos/heap.c:82:
+freertos/portable.h:166:8: note: previous declaration of 'xPortGetFreeHeapSize' was here
+ size_t xPortGetFreeHeapSize( void ) PRIVILEGED_FUNCTION;
+        ^
+make: *** [obj/default/freertos/heap.o] Error 1
+
+13:22:56 Build Finished (took 794ms)
+

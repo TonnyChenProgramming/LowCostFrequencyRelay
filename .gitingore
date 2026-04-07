@@ -1,0 +1,31 @@
+# === Quartus Prime Output & Temporary Files ===
+db/
+incremental_db/
+output_files/
+simulation/
+greybox_tmp/
+hc_output/
+*.rpt
+*.summary
+*.jdi
+*.pin
+*.done
+*.qws
+*.bak
+*.smsg
+*.txt
+*.log
+
+# === Eclipse / NIOS II Metadata & Build ===
+.metadata/
+RemoteSystemsTempFiles/
+*.bsp.build.log
+*.build.log
+*/obj/
+*/bin/
+
+# === System & Lock Files ===
+*.flock
+*.lock
+.DS_Store
+Thumbs.db

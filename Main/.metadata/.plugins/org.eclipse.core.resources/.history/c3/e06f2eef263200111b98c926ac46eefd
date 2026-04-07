@@ -1,0 +1,163 @@
+/* Standard includes. */
+#include <stdio.h>
+#include <stdbool.h>
+#include <math.h>
+#include "system.h"
+#include "io.h"
+#include "altera_avalon_pio_regs.h"
+#include "sys/alt_irq.h"
+
+/* Scheduler includes. */
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/queue.h"
+
+/* The parameters passed to the reg test tasks.  This is just done to check
+ the parameter passing mechanism is working correctly. */
+#define mainREG_TEST_1_PARAMETER    ( ( void * ) 0x12345678 )
+#define mainREG_TEST_2_PARAMETER    ( ( void * ) 0x87654321 )
+#define mainREG_TEST_PRIORITY       ( tskIDLE_PRIORITY + 1)
+static void prvFirstRegTestTask(void *pvParameters);
+static void prvSecondRegTestTask(void *pvParameters);
+
+#define SAMPLING_FREQ_HZ 16000.0
+
+
+typedef struct
+{
+    unsigned int adcCount;
+} AdcCountMessage;
+
+typedef struct
+{
+    double frequencyHz;
+    double rocHzPerSec;
+} FreqRocMessage;
+
+typedef struct
+{
+    double thresholdFreqHz;
+    double thresholdRocHzPerSec;
+} ThresholdMessage;
+
+static QueueHandle_t Q_adcCount;
+static QueueHandle_t Q_newFreqToVGA;
+static QueueHandle_t Q_newFreqToMonitor;
+
+
+void FreqAnalyserISR(void *context)
+{
+    AdcCountMessage msg;
+
+    (void)context;
+
+    msg.adcCount = IORD(FREQUENCY_ANALYSER_BASE, 0);
+    xQueueSendToBackFromISR(Q_adcCount, &msg, NULL);
+}
+void Switch_ISR(void *context)
+{
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    AdcCountMessage msg;
+
+    /* 1. Clear the PIO Edge Capture Register */
+    /* Use PUSH_BUTTON_BASE consistently */
+    IOWR_ALTERA_AVALON_PIO_EDGE_CAP(PUSH_BUTTON_BASE, 0);
+
+    /* 2. Mimic the Analyser: 320 count = 50Hz */
+    msg.adcCount = 320;
+
+    /* 3. Send message to the Analyser Task */
+    xQueueSendToBackFromISR(Q_adcCount, &msg, &xHigherPriorityTaskWoken);
+
+    /* 4. Context switch */
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+/*
+ * Create the demo tasks then start the scheduler.
+ */
+int main(void)
+{
+    /* --- Queue Initialization --- */
+    Q_adcCount = xQueueCreate(5, sizeof(AdcCountMessage));
+    Q_newFreqToVGA = xQueueCreate(5, sizeof(FreqRocMessage));
+    Q_newFreqToMonitor = xQueueCreate(5, sizeof(FreqRocMessage));
+
+    /* --- Hardware Interrupt Setup --- */
+
+    /* FIX: Use PUSH_BUTTON_BASE consistently for both Mask and Edge Cap */
+    IOWR_ALTERA_AVALON_PIO_IRQ_MASK(PUSH_BUTTON_BASE, 0x1);
+    IOWR_ALTERA_AVALON_PIO_EDGE_CAP(PUSH_BUTTON_BASE, 0x0);
+
+    /* FIX: Ensure IRQ and ID macros match your system.h */
+    alt_ic_isr_register(PUSH_BUTTON_IRQ_INTERRUPT_CONTROLLER_ID,
+                        PUSH_BUTTON_IRQ,
+                        Switch_ISR,
+                        NULL, 0x0);
+
+    /* --- Task Creation --- */
+    xTaskCreate(prvFirstRegTestTask, "Logic", configMINIMAL_STACK_SIZE, NULL, mainREG_TEST_PRIORITY, NULL);
+    xTaskCreate(prvSecondRegTestTask, "Print", configMINIMAL_STACK_SIZE, NULL, mainREG_TEST_PRIORITY, NULL);
+
+    vTaskStartScheduler();
+
+    for (;;);
+}
+static void prvFirstRegTestTask(void *pvParameters)
+{
+
+    AdcCountMessage inMsg;
+    FreqRocMessage outMsg;
+    double prevFreq = 0.0;
+    bool first = true;
+
+    (void)pvParameters;
+
+    for (;;)
+    {
+        if (xQueueReceive(Q_adcCount, &inMsg, portMAX_DELAY) == pdPASS)
+        {
+            if (inMsg.adcCount == 0)
+            {
+                continue;
+            }
+
+            outMsg.frequencyHz = SAMPLING_FREQ_HZ / (double)inMsg.adcCount;
+
+            if (first)
+            {
+                outMsg.rocHzPerSec = 0.0;
+                first = false;
+            }
+            else
+            {
+                double deltaT = (double)inMsg.adcCount / SAMPLING_FREQ_HZ;
+                outMsg.rocHzPerSec = (outMsg.frequencyHz - prevFreq) / deltaT;
+            }
+
+            prevFreq = outMsg.frequencyHz;
+
+            xQueueSendToBack(Q_newFreqToVGA, &outMsg, portMAX_DELAY);
+            xQueueSendToBack(Q_newFreqToMonitor, &outMsg, portMAX_DELAY);
+        }
+    }
+
+}
+static void prvSecondRegTestTask(void *pvParameters)
+{
+    /* Use the correct struct type for the message */
+    FreqRocMessage receivedMsg;
+
+    (void)pvParameters; // Prevent compiler warning for unused parameter
+
+    for (;;)
+    {
+        /* Listen to the Q_newFreqToVGA queue */
+        if (xQueueReceive(Q_newFreqToVGA, &receivedMsg, portMAX_DELAY) == pdPASS)
+        {
+            /* Print the frequency and RoC to the console */
+            printf("VGA Monitor -> Freq: %.2f Hz | RoC: %.2f Hz/s\n",
+                    receivedMsg.frequencyHz,
+                    receivedMsg.rocHzPerSec);
+        }
+    }
+}
