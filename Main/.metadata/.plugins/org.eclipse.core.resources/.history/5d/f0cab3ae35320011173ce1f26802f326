@@ -14,32 +14,25 @@
 
 /* The parameters passed to the reg test tasks.  This is just done to check
  the parameter passing mechanism is working correctly. */
-#define LOW_FREQ_THRESHOLD 49.0;
-#define HIGH_ROC_THRESHOLD 1.0;
-#define SAMPLING_FREQ_HZ 16000.0
-
+#define mainREG_TEST_1_PARAMETER    ( ( void * ) 0x12345678 )
+#define mainREG_TEST_2_PARAMETER    ( ( void * ) 0x87654321 )
+#define mainREG_TEST_PRIORITY       ( tskIDLE_PRIORITY + 1)
 #define T_FreqAndRoc_PRIORITY			4
 #define T_VgaDisplay_PRIORITY			6
 #define T_StabilityMonitor_PRIORITY		4
 #define T_SwitchPolling_PRIORITY		5
 #define T_LoadCtrl_PRIORITY				3
 #define T_RecordTimeDisplay_PRIORITY	6
-#define T_SwitchMode_PRIORITY			3
+#define T_SwitchState_PRIORITY			3
 #define T_UpdateThreshold_PRIORITY		3
 
 static void T_FreqAndRoc(void *pvParameters);
 static void T_VgaDisplay(void *pvParameters);
-static void T_SwitchPolling(void *pvParameters);
-static void T_LoadCtrl(void *pvParameters);
-static void T_StabilityMonitor(void *pvParameters);
-static void T_RecordTimeDisplay (void *pvParameters);
-static void T_SwitchMode (void *pvParameters);
-static void T_UpdateThreshold (void *pvParameters);
 
 static void ISR_Init(void);
+#define SAMPLING_FREQ_HZ 16000.0
 
 
-// structure declaration
 typedef struct
 {
     unsigned int adcCount;
@@ -61,20 +54,13 @@ typedef	struct
 {
 	uint8_t producer_id; // 0- from T_SwitchPolling ; 1 = from T_StabilityMonitor
 	uint8_t switch_state;
-	uint8_t stability_state; // 0 - stable ; 1 - unstable
+	uint8_t stability_state;
 } LoadCtrlMessage;
 
-// system variables
 static QueueHandle_t Q_adcCount;
 static QueueHandle_t Q_newFreqToVGA;
 static QueueHandle_t Q_newFreqToMonitor;
 static QueueHandle_t Q_newLoadCtrl;
-
-enum mode {
-	MAINTENANCE,
-	LOAD_MANAGING
-};
-enum mode current_system_mode = LOAD_MANAGING;
 
 void FreqAnalyserISR(void *context)
 {
@@ -86,7 +72,7 @@ void FreqAnalyserISR(void *context)
     xQueueSendToBackFromISR(Q_adcCount, &msg, NULL);
 }
 
-// push button to change modes
+/* Legacy ISR Signature */
 void button_interrupts_function(void* context, alt_u32 id)
 {
     // 1. Cast context (pointer to our buttonValue)
@@ -102,16 +88,9 @@ void button_interrupts_function(void* context, alt_u32 id)
     msg.adcCount = 320;
     //printf(".2%f", msg);
 
-    //enum to swap modes
-    if(current_system_mode == MAINTENANCE){
-    	current_system_mode = LOAD_MANAGING;
-    } else{
-    	current_system_mode = MAINTENANCE;
-    }
-
 
     // 3. Send to Queue (Use FromISR version)
-    //xQueueSendToBackFromISR(Q_adcCount, &msg, &xHigherPriorityTaskWoken);
+    xQueueSendToBackFromISR(Q_adcCount, &msg, &xHigherPriorityTaskWoken);
 
     // 4. Clear the edge capture register so the interrupt doesn't re-fire
     IOWR_ALTERA_AVALON_PIO_EDGE_CAP(PUSH_BUTTON_BASE, 0x7);
@@ -136,8 +115,6 @@ int main(void)
     xTaskCreate(T_FreqAndRoc, "Logic", configMINIMAL_STACK_SIZE, NULL, T_FreqAndRoc_PRIORITY, NULL);
     xTaskCreate(T_VgaDisplay, "Print", configMINIMAL_STACK_SIZE, NULL, T_VgaDisplay_PRIORITY, NULL);
     xTaskCreate(T_SwitchPolling, "Logic", configMINIMAL_STACK_SIZE, NULL, T_SwitchPolling_PRIORITY, NULL);
-    xTaskCreate(T_StabilityMonitor, "Logic", configMINIMAL_STACK_SIZE, NULL,T_StabilityMonitor_PRIORITY, NULL);
-    xTaskCreate(T_SwitchMode, "Logic", configMINIMAL_STACK_SIZE, NULL,T_SwitchMode_PRIORITY, NULL);
     xTaskCreate(T_LoadCtrl, "Logic", configMINIMAL_STACK_SIZE, NULL,T_LoadCtrl_PRIORITY, NULL);
 
     vTaskStartScheduler();
@@ -157,7 +134,6 @@ static void ISR_Init(void)
     // Note: Legacy does not use the "Controller ID" parameter
     alt_irq_register(PUSH_BUTTON_IRQ, (void*)&buttonValue, button_interrupts_function);
 }
-
 static void T_FreqAndRoc(void *pvParameters)
 {
 
@@ -199,7 +175,6 @@ static void T_FreqAndRoc(void *pvParameters)
     }
 
 }
-
 static void T_VgaDisplay(void *pvParameters)
 {
     /* Use the correct struct type for the message */
@@ -220,7 +195,6 @@ static void T_VgaDisplay(void *pvParameters)
         }
     }
 }
-
 static void T_SwitchPolling(void *pvParameters)
 {
 	  unsigned int uiSwitchValue = 0;
@@ -233,39 +207,6 @@ static void T_SwitchPolling(void *pvParameters)
 		   xQueueSendToBack(Q_newLoadCtrl, &outMsg, portMAX_DELAY);
 		   vTaskDelay(pdMS_TO_TICKS(100));
 	  }
-}
-
-static void T_StabilityMonitor(void *pvParameters){
-	FreqRocMessage receivedMsg;
-	LoadCtrlMessage outMsg;
-
-	  for (;;)
-	  {
-		if (xQueueReceive(Q_newFreqToMonitor, &receivedMsg, portMAX_DELAY) == pdPASS)
-		{
-			outMsg.producer_id = 1;
-			outMsg.stability_state = 0;
-			uint8_t low_freq_flag = receivedMsg.frequencyHz < (double )LOW_FREQ_THRESHOLD;
-			uint8_t high_roc_flag = fabs(receivedMsg.rocHzPerSec) > (double)HIGH_ROC_THRESHOLD;
-			outMsg.stability_state = low_freq_flag | high_roc_flag;
-
-			xQueueSendToBack(Q_newLoadCtrl, &outMsg, portMAX_DELAY);
-		}
-	  }
-}
-
-static void T_SwitchMode(void *pvParameters)
-{
-	(void)pvParameters;
-	if(current_system_mode == MAINTENANCE){
-		//need to block the relay. stop it from any shedding
-	}
-	else{
-		//proceed normally
-
-
-	}
-
 }
 static void T_LoadCtrl(void *pvParameters)
 {

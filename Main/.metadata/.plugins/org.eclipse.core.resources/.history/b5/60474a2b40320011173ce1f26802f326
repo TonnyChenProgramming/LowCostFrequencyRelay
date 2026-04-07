@@ -86,7 +86,7 @@ void FreqAnalyserISR(void *context)
     xQueueSendToBackFromISR(Q_adcCount, &msg, NULL);
 }
 
-// push button to change modes
+/* Legacy ISR Signature */
 void button_interrupts_function(void* context, alt_u32 id)
 {
     // 1. Cast context (pointer to our buttonValue)
@@ -102,16 +102,9 @@ void button_interrupts_function(void* context, alt_u32 id)
     msg.adcCount = 320;
     //printf(".2%f", msg);
 
-    //enum to swap modes
-    if(current_system_mode == MAINTENANCE){
-    	current_system_mode = LOAD_MANAGING;
-    } else{
-    	current_system_mode = MAINTENANCE;
-    }
-
 
     // 3. Send to Queue (Use FromISR version)
-    //xQueueSendToBackFromISR(Q_adcCount, &msg, &xHigherPriorityTaskWoken);
+    xQueueSendToBackFromISR(Q_adcCount, &msg, &xHigherPriorityTaskWoken);
 
     // 4. Clear the edge capture register so the interrupt doesn't re-fire
     IOWR_ALTERA_AVALON_PIO_EDGE_CAP(PUSH_BUTTON_BASE, 0x7);
@@ -256,15 +249,6 @@ static void T_StabilityMonitor(void *pvParameters){
 
 static void T_SwitchMode(void *pvParameters)
 {
-	(void)pvParameters;
-	if(current_system_mode == MAINTENANCE){
-		//need to block the relay. stop it from any shedding
-	}
-	else{
-		//proceed normally
-
-
-	}
 
 }
 static void T_LoadCtrl(void *pvParameters)
