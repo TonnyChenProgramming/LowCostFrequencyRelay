@@ -254,6 +254,8 @@ static void T_StabilityMonitor(void *pvParameters){
 	  }
 }
 
+// lowkey, is this even necessary? Cause the ISR is swapping modes itself, this task doesn't really do anything 
+// but tell LoadCtrl that the modes switched. But then we read from the global enum anyways? Which we may needa mutex lock lol
 static void T_SwitchMode(void *pvParameters)
 {
 	(void)pvParameters;
@@ -270,6 +272,16 @@ static void T_SwitchMode(void *pvParameters)
 static void T_LoadCtrl(void *pvParameters)
 {
     LoadCtrlMessage receivedMsg;
+    static uint8_t requestedLoadMask = 0; // user leds
+    static uint8_t shedLoadMask = 0; // relay leds
+    static uint8_t actualLoadMask = 0; // what will be used to display the leds
+
+    static uint8_t networkUnstable = 0;
+    static uint8_t prevNetworkUnstable = 0; //init stability, and change as updates throughout code run
+
+    static uint8_t loadManaging = 0;
+
+
     (void)pvParameters; // Prevent compiler warning for unused parameter
 
     for (;;)
@@ -279,10 +291,33 @@ static void T_LoadCtrl(void *pvParameters)
         {
         	if (receivedMsg.producer_id == 0) //switch generated
         	{
-        		IOWR_ALTERA_AVALON_PIO_DATA(RED_LEDS_BASE, receivedMsg.switch_state);
+                uint8_t newSwitchMask = receivedMsg.switch_state & 0x1F;
+                if(current_system_mode == MAINTENANCE){
+                    // force relay to do nothing, only listens to users input
+                    requestedLoadMask = newSwitchMask;
+                    shedLoadMask = 0;
+                    loadManaging = 0; //flag for relay on/off
+                }
+                else {
+                    // user able to turn off loads, cannot turn on a load if relay has shed
+                    uint8_t userTurnedOff = requestedLoadMask & (~newSwitchMask);
+                    uint8_t allowedTurnedOff = newSwitchMask & (~shedLoadMask);
+
+                    requestedLoadMask = userTurnedOff | allowedTurnedOff;
+                }
+        		//IOWR_ALTERA_AVALON_PIO_DATA(RED_LEDS_BASE, receivedMsg.switch_state);
         	}
         	else if (receivedMsg.producer_id == 1) // stability monitor generated
-        	{
+        	{   
+                networkUnstable = receivedMsg.stability_state; // essentially flagging whether stable or not
+
+                if(current_system_mode != MAINTENANCE){
+                    if(networkUnstable != prevNetworkUnstable){
+                        //change in stability of system, implement counter start 500ms count
+
+                    }
+
+                }
 
         	}
         }
