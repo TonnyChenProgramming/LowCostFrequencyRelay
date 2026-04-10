@@ -245,7 +245,7 @@ static void T_VgaDisplay(void *pvParameters)
 	if(char_buf == NULL){
 		printf("can't find char buffer device\n");
 	}
-    
+
 	alt_up_char_buffer_clear(char_buf);
 
 	//Set up plot axes
@@ -263,7 +263,7 @@ static void T_VgaDisplay(void *pvParameters)
 	alt_up_char_buffer_string(char_buf, "46.0", 10, 22);
 
     //roc header
-    alt_up_char_buffer_string(char_buf, "df/dt", 4, 26);
+    alt_up_char_buffer_string(char_buf, "df/dt(Hz/s)", 4, 26);
     // roc axis unnecessary if underneath the frequency - just needs to showcase the changes
 
     //init buffers
