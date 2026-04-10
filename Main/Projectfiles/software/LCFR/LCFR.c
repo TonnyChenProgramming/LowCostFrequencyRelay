@@ -6,6 +6,8 @@
 #include "io.h"
 #include "altera_avalon_pio_regs.h"
 #include "sys/alt_irq.h"
+#include "altera_up_avalon_video_character_buffer_with_dma.h"
+#include "altera_up_avalon_video_pixel_buffer_dma.h"
 
 /* Scheduler includes. */
 #include "freertos/FreeRTOS.h"
@@ -17,6 +19,18 @@
 #define LOW_FREQ_THRESHOLD 49.0;
 #define HIGH_ROC_THRESHOLD 1.0;
 #define SAMPLING_FREQ_HZ 16000.0
+
+//For frequency plot
+#define FREQPLT_ORI_X 101		//x axis pixel position at the plot origin
+#define FREQPLT_GRID_SIZE_X 5	//pixel separation in the x axis between two data points
+#define FREQPLT_ORI_Y 199.0		//y axis pixel position at the plot origin
+#define FREQPLT_FREQ_RES 20.0	//number of pixels per Hz (y axis scale)
+
+#define ROCPLT_ORI_X 101
+#define ROCPLT_GRID_SIZE_X 5
+#define ROCPLT_ORI_Y 259.0
+#define ROCPLT_ROC_RES 0.5		//number of pixels per Hz/s (y axis scale)
+
 
 #define T_FreqAndRoc_PRIORITY			4
 #define T_VgaDisplay_PRIORITY			6
@@ -63,6 +77,14 @@ typedef	struct
 	uint8_t switch_state;
 	uint8_t stability_state; // 0 - stable ; 1 - unstable
 } LoadCtrlMessage;
+
+typedef struct
+{
+    unsigned int x1;
+	unsigned int y1;
+	unsigned int x2;
+	unsigned int y2;
+}Line;
 
 // system variables
 static QueueHandle_t Q_adcCount;
@@ -203,21 +225,91 @@ static void T_FreqAndRoc(void *pvParameters)
 static void T_VgaDisplay(void *pvParameters)
 {
     /* Use the correct struct type for the message */
-    FreqRocMessage receivedMsg;
+    FreqRocMessage receivedMsg; //frequencyHz, rocHzPerSec - both in queue
+
+    //needs to implement printing of thresholds and stability -- needs to take from stability monitor
 
     (void)pvParameters; // Prevent compiler warning for unused parameter
+
+    //initialize VGA controllers
+	alt_up_pixel_buffer_dma_dev *pixel_buf;
+	pixel_buf = alt_up_pixel_buffer_dma_open_dev(VIDEO_PIXEL_BUFFER_DMA_NAME);
+	if(pixel_buf == NULL){
+		printf("can't find pixel buffer device\n");
+	}
+
+	alt_up_pixel_buffer_dma_clear_screen(pixel_buf, 0);
+
+	alt_up_char_buffer_dev *char_buf;
+	char_buf = alt_up_char_buffer_open_dev("/dev/video_character_buffer_with_dma");
+	if(char_buf == NULL){
+		printf("can't find char buffer device\n");
+	}
+    
+	alt_up_char_buffer_clear(char_buf);
+
+	//Set up plot axes
+	alt_up_pixel_buffer_dma_draw_hline(pixel_buf, 100, 590, 200, ((0x3ff << 20) + (0x3ff << 10) + (0x3ff)), 0);
+	alt_up_pixel_buffer_dma_draw_hline(pixel_buf, 100, 590, 300, ((0x3ff << 20) + (0x3ff << 10) + (0x3ff)), 0);
+	alt_up_pixel_buffer_dma_draw_vline(pixel_buf, 100, 50, 200, ((0x3ff << 20) + (0x3ff << 10) + (0x3ff)), 0);
+	alt_up_pixel_buffer_dma_draw_vline(pixel_buf, 100, 220, 300, ((0x3ff << 20) + (0x3ff << 10) + (0x3ff)), 0);
+
+    // frequency header
+    alt_up_char_buffer_string(char_buf, "Frequency(Hz)", 4, 4);
+    // frequency plot axis
+    alt_up_char_buffer_string(char_buf, "52.0", 10, 7);
+	alt_up_char_buffer_string(char_buf, "50.0", 10, 12);
+	alt_up_char_buffer_string(char_buf, "48.0", 10, 17);
+	alt_up_char_buffer_string(char_buf, "46.0", 10, 22);
+
+    //roc header
+    alt_up_char_buffer_string(char_buf, "df/dt", 4, 26);
+    // roc axis unnecessary if underneath the frequency - just needs to showcase the changes
+
+    //init buffers
+    double freq[100], ROCfreq[100];
+	int i = 0;
+	Line line_freq, line_roc;
 
     for (;;)
     {
         /* Listen to the Q_newFreqToVGA queue */
-        if (xQueueReceive(Q_newFreqToVGA, &receivedMsg, portMAX_DELAY) == pdPASS)
+        if (xQueueReceive(Q_newFreqToVGA, &receivedMsg, portMAX_DELAY) == pdPASS) // frequency & ROC data has been received
         {
-            //printf("    task2 activated");
-            /* Print the frequency and RoC to the console */
-            printf("VGA Monitor -> Freq: %.2f Hz | RoC: %.2f Hz/s\n",
-                    receivedMsg.frequencyHz,
-                    receivedMsg.rocHzPerSec);
+            // fills buffers with data
+            freq[i] = receivedMsg.frequencyHz;
+            ROCfreq[i] = receivedMsg.rocHzPerSec;
+            i = (i + 1) % 100;
         }
+
+        //clear old data
+        alt_up_pixel_buffer_dma_draw_box(pixel_buf, 101, 0, 639, 199, 0, 0);
+		alt_up_pixel_buffer_dma_draw_box(pixel_buf, 101, 201, 639, 299, 0, 0);
+
+        for(int j = 0; j < 99; j++){
+            //Frequency plot
+				line_freq.x1 = FREQPLT_ORI_X + FREQPLT_GRID_SIZE_X * j;
+				line_freq.y1 = (int)(FREQPLT_ORI_Y - FREQPLT_FREQ_RES * (freq[(i+j)%100] - LOW_FREQ_THRESHOLD)); //plotting relative to 49.0 HZ
+
+				line_freq.x2 = FREQPLT_ORI_X + FREQPLT_GRID_SIZE_X * (j + 1);
+				line_freq.y2 = (int)(FREQPLT_ORI_Y - FREQPLT_FREQ_RES * (freq[(i+j+1)%100] - LOW_FREQ_THRESHOLD));
+
+				//Frequency RoC plot
+                //Shows distinct changes from the frequency, no relative value - same as figure 2
+				line_roc.x1 = ROCPLT_ORI_X + ROCPLT_GRID_SIZE_X * j;
+				line_roc.y1 = (int)(ROCPLT_ORI_Y - ROCPLT_ROC_RES * ROCfreq[(i+j)%100]);
+
+				line_roc.x2 = ROCPLT_ORI_X + ROCPLT_GRID_SIZE_X * (j + 1);
+				line_roc.y2 = (int)(ROCPLT_ORI_Y - ROCPLT_ROC_RES * ROCfreq[(i+j+1)%100]);
+
+				//Draw lines
+				alt_up_pixel_buffer_dma_draw_line(pixel_buf, line_freq.x1, line_freq.y1, line_freq.x2, line_freq.y2, 0x3ff << 0, 0);
+				alt_up_pixel_buffer_dma_draw_line(pixel_buf, line_roc.x1, line_roc.y1, line_roc.x2, line_roc.y2, 0x3ff << 0, 0);
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(10));
+
+
     }
 }
 

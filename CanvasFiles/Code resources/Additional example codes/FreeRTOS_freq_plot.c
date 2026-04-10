@@ -69,6 +69,7 @@ void PRVGADraw_Task(void *pvParameters ){
 	alt_up_pixel_buffer_dma_draw_vline(pixel_buf, 100, 220, 300, ((0x3ff << 20) + (0x3ff << 10) + (0x3ff)), 0);
 
 	alt_up_char_buffer_string(char_buf, "Frequency(Hz)", 4, 4);
+	// loads the buffers with hardcoded values. need this to read from the queue instead
 	alt_up_char_buffer_string(char_buf, "52", 10, 7);
 	alt_up_char_buffer_string(char_buf, "50", 10, 12);
 	alt_up_char_buffer_string(char_buf, "48", 10, 17);
@@ -141,6 +142,8 @@ void PRVGADraw_Task(void *pvParameters ){
 	}
 }
 
+
+//calcs frequency, sends to queue freq_data.
 void freq_relay(){
 	#define SAMPLING_FREQ 16000.0
 	double temp = SAMPLING_FREQ/(double)IORD(FREQUENCY_ANALYSER_BASE, 0);
