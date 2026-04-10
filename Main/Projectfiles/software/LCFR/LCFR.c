@@ -26,6 +26,7 @@
 #define T_RecordTimeDisplay_PRIORITY	6
 #define T_SwitchMode_PRIORITY			3
 #define T_UpdateThreshold_PRIORITY		3
+#define T_UpdateLed_PRIORITY			4
 
 static void T_FreqAndRoc(void *pvParameters);
 static void T_VgaDisplay(void *pvParameters);
@@ -35,7 +36,7 @@ static void T_StabilityMonitor(void *pvParameters);
 static void T_RecordTimeDisplay (void *pvParameters);
 static void T_SwitchMode (void *pvParameters);
 static void T_UpdateThreshold (void *pvParameters);
-
+static void T_UpdateLed(void *pvParameters);
 static void ISR_Init(void);
 
 
@@ -69,6 +70,7 @@ static QueueHandle_t Q_adcCount;
 static QueueHandle_t Q_newFreqToVGA;
 static QueueHandle_t Q_newFreqToMonitor;
 static QueueHandle_t Q_newLoadCtrl;
+static QueueHandle_t Q_newLed;
 
 enum mode {
 	MAINTENANCE,
@@ -105,8 +107,10 @@ void button_interrupts_function(void* context, alt_u32 id)
     //enum to swap modes
     if(current_system_mode == MAINTENANCE){
     	current_system_mode = LOAD_MANAGING;
+    	printf("LOAD_MANAGING\n");
     } else{
     	current_system_mode = MAINTENANCE;
+    	printf("MAINTENANCE\n");
     }
 
 
@@ -124,6 +128,7 @@ void button_interrupts_function(void* context, alt_u32 id)
  */
 int main(void)
 {
+	IOWR_ALTERA_AVALON_PIO_DATA(GREEN_LEDS_BASE, 0x0);
 
 	ISR_Init();
     /* --- Queue Initialization --- */
@@ -131,7 +136,7 @@ int main(void)
     Q_newFreqToVGA = xQueueCreate(5, sizeof(FreqRocMessage));
     Q_newFreqToMonitor = xQueueCreate(5, sizeof(FreqRocMessage));
     Q_newLoadCtrl = xQueueCreate(5, sizeof(LoadCtrlMessage));
-
+    Q_newLed = xQueueCreate(5,sizeof(uint16_t));
     /* --- Task Creation --- */
     xTaskCreate(T_FreqAndRoc, "Logic", configMINIMAL_STACK_SIZE, NULL, T_FreqAndRoc_PRIORITY, NULL);
     xTaskCreate(T_VgaDisplay, "Print", configMINIMAL_STACK_SIZE, NULL, T_VgaDisplay_PRIORITY, NULL);
@@ -139,6 +144,7 @@ int main(void)
     xTaskCreate(T_StabilityMonitor, "Logic", configMINIMAL_STACK_SIZE, NULL,T_StabilityMonitor_PRIORITY, NULL);
     xTaskCreate(T_SwitchMode, "Logic", configMINIMAL_STACK_SIZE, NULL,T_SwitchMode_PRIORITY, NULL);
     xTaskCreate(T_LoadCtrl, "Logic", configMINIMAL_STACK_SIZE, NULL,T_LoadCtrl_PRIORITY, NULL);
+    xTaskCreate(T_UpdateLed, "Print", configMINIMAL_STACK_SIZE, NULL,T_UpdateLed_PRIORITY, NULL);
 
     vTaskStartScheduler();
 
@@ -231,7 +237,7 @@ static void T_SwitchPolling(void *pvParameters)
 		   outMsg.producer_id = 0;
 		   outMsg.switch_state = (uint8_t)uiSwitchValue;
 		   xQueueSendToBack(Q_newLoadCtrl, &outMsg, portMAX_DELAY);
-		   vTaskDelay(pdMS_TO_TICKS(100));
+		   vTaskDelay(pdMS_TO_TICKS(500));
 	  }
 }
 
@@ -270,13 +276,30 @@ static void T_SwitchMode(void *pvParameters)
 static void T_LoadCtrl(void *pvParameters)
 {
     LoadCtrlMessage receivedMsg;
+<<<<<<< Updated upstream
     (void)pvParameters; // Prevent compiler warning for unused parameter
+=======
+
+    static uint16_t current_user_switch_input;
+    static uint8_t current_stability_state;
+
+    static uint8_t requestedLoadMask = 0; // user leds
+    static uint8_t shedLoadMask = 0; // relay leds
+    static uint8_t actualLoadMask = 0; // what will be used to display the leds
+
+    static uint8_t networkUnstable = 0;
+    static uint8_t prevNetworkUnstable = 0; //init stability, and change as updates throughout code run
+
+    static uint8_t loadManaging = 0;
+    (void) pvParameters; // Prevent compiler warning for unused parameter
+>>>>>>> Stashed changes
 
     for (;;)
     {
         /* Listen to the Q_newFreqToVGA queue */
         if (xQueueReceive(Q_newLoadCtrl, &receivedMsg, portMAX_DELAY) == pdPASS)
         {
+<<<<<<< Updated upstream
         	if (receivedMsg.producer_id == 0) //switch generated
         	{
         		IOWR_ALTERA_AVALON_PIO_DATA(RED_LEDS_BASE, receivedMsg.switch_state);
@@ -285,7 +308,59 @@ static void T_LoadCtrl(void *pvParameters)
         	{
 
         	}
+=======
+        	printf("[%d , %d, %d]",receivedMsg.producer_id, receivedMsg.stability_state, receivedMsg.switch_state);
+
+            // Parse the correct information based on packet id
+            if (receivedMsg.producer_id == 0)
+            {
+                current_user_switch_input = receivedMsg.switch_state & 0x1F;
+            }
+            else if (receivedMsg.producer_id == 1)
+            {
+                current_stability_state = receivedMsg.stability_state;
+            }
+
+            // Update LEDs mask based on current system state,
+            // and latest switch + stability state
+
+            if (current_system_mode == MAINTENANCE)
+            {
+            	printf("enter the maintenance branch\n");
+                // In maintenance state, only switches control the load
+            	xQueueSendToBack(Q_newLed, &current_user_switch_input, portMAX_DELAY);
+
+            }
+            else if (current_system_mode == LOAD_MANAGING)
+            {
+                if (receivedMsg.producer_id == 0)
+                {
+                    // User able to turn off loads, cannot turn on a load if relay has shed
+                    requestedLoadMask = 0; // reset all switch-based LEDs
+                }
+                else if (receivedMsg.producer_id == 1)
+                {
+                    current_stability_state = receivedMsg.stability_state;
+                }
+            }
+>>>>>>> Stashed changes
         }
     }
+}
+static void T_UpdateLed(void *pvParameters)
+{
+	uint16_t receivedMsg;
+	for(;;)
+	{
+		if (xQueueReceive(Q_newLed, &receivedMsg, portMAX_DELAY) == pdPASS)
+		{
+			printf("enter the led branch\n");
+            uint8_t greenMask = (uint8_t)(receivedMsg & 0x00FF);
+            uint8_t redMask   = (uint8_t)((receivedMsg >> 8) & 0x00FF);
+
+            IOWR_ALTERA_AVALON_PIO_DATA(GREEN_LEDS_BASE, greenMask);
+            IOWR_ALTERA_AVALON_PIO_DATA(RED_LEDS_BASE, redMask);
+		}
+	}
 
 }

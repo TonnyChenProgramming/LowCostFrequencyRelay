@@ -1,0 +1,1261 @@
+12:30:20 **** Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+Info: Compiling LCFR.c to obj/default/LCFR.o
+nios2-elf-gcc -xc -MP -MMD -c -I../LCFR_bsp//HAL/inc -I../LCFR_bsp/ -I../LCFR_bsp//drivers/inc  -pipe -D__hal__ -DALT_NO_INSTRUCTION_EMULATION -DALT_SINGLE_THREADED    -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o obj/default/LCFR.o LCFR.c
+LCFR.c: In function 'button_interrupts_function':
+LCFR.c:95:21: warning: variable 'msg' set but not used [-Wunused-but-set-variable]
+     AdcCountMessage msg;
+                     ^
+LCFR.c:94:16: warning: unused variable 'xHigherPriorityTaskWoken' [-Wunused-variable]
+     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+                ^
+LCFR.c: In function 'T_LoadCtrl':
+LCFR.c:282:20: warning: variable 'loadManaging' set but not used [-Wunused-but-set-variable]
+     static uint8_t loadManaging = 0;
+                    ^
+LCFR.c:277:20: warning: unused variable 'actualLoadMask' [-Wunused-variable]
+     static uint8_t actualLoadMask = 0; // what will be used to display the leds
+                    ^
+LCFR.c: At top level:
+LCFR.c:35:13: warning: 'T_RecordTimeDisplay' declared 'static' but never defined [-Wunused-function]
+ static void T_RecordTimeDisplay (void *pvParameters);
+             ^
+LCFR.c:37:13: warning: 'T_UpdateThreshold' declared 'static' but never defined [-Wunused-function]
+ static void T_UpdateThreshold (void *pvParameters);
+             ^
+Info: Linking LCFR.elf
+nios2-elf-g++  -T'../LCFR_bsp//linker.x' -msys-crt0='../LCFR_bsp//obj/HAL/src/crt0.o' -msys-lib=hal_bsp -L../LCFR_bsp/   -Wl,-Map=LCFR.map   -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o LCFR.elf obj/default/FreeRTOS/croutine.o obj/default/FreeRTOS/event_groups.o obj/default/FreeRTOS/heap.o obj/default/FreeRTOS/list.o obj/default/FreeRTOS/port.o obj/default/FreeRTOS/queue.o obj/default/FreeRTOS/tasks.o obj/default/FreeRTOS/timers.o obj/default/LCFR.o obj/default/FreeRTOS/port_asm.o -lm -msys-lib=m
+nios2-elf-insert LCFR.elf --thread_model hal --cpu_name nios2 --qsys true --simulation_enabled false --id 7 --sidp 0x430f0 --timestamp 1393900972 --stderr_dev jtag_uart --stdin_dev jtag_uart --stdout_dev jtag_uart --sopc_system_name nios2 --quartus_project_dir "C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles" --sopcinfo C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles/software/LCFR_bsp/../../nios2.sopcinfo
+Info: (LCFR.elf) 610 KBytes program size (code + initialized data).
+Info:            130561 KBytes free for stack + heap.
+Info: Creating LCFR.objdump
+nios2-elf-objdump --disassemble --syms --all-header --source LCFR.elf >LCFR.objdump
+[LCFR build complete]
+12:34:42 **** Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+Info: Compiling LCFR.c to obj/default/LCFR.o
+nios2-elf-gcc -xc -MP -MMD -c -I../LCFR_bsp//HAL/inc -I../LCFR_bsp/ -I../LCFR_bsp//drivers/inc  -pipe -D__hal__ -DALT_NO_INSTRUCTION_EMULATION -DALT_SINGLE_THREADED    -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o obj/default/LCFR.o LCFR.c
+LCFR.c: In function 'button_interrupts_function':
+LCFR.c:95:21: warning: variable 'msg' set but not used [-Wunused-but-set-variable]
+     AdcCountMessage msg;
+                     ^
+LCFR.c:94:16: warning: unused variable 'xHigherPriorityTaskWoken' [-Wunused-variable]
+     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+                ^
+LCFR.c: In function 'T_LoadCtrl':
+LCFR.c:293:17: error: 'current_user_switch_input' undeclared (first use in this function)
+                 current_user_switch_input = receivedMsg.switch_state & 0x1F;
+                 ^
+LCFR.c:293:17: note: each undeclared identifier is reported only once for each function it appears in
+LCFR.c:297:17: error: 'current_stability_state' undeclared (first use in this function)
+                 current_stability_state = receivedMsg.stability_state;
+                 ^
+LCFR.c:282:20: warning: unused variable 'loadManaging' [-Wunused-variable]
+     static uint8_t loadManaging = 0;
+                    ^
+LCFR.c:280:20: warning: unused variable 'prevNetworkUnstable' [-Wunused-variable]
+     static uint8_t prevNetworkUnstable = 0; //init stability, and change as updates throughout code run
+                    ^
+LCFR.c:279:20: warning: unused variable 'networkUnstable' [-Wunused-variable]
+     static uint8_t networkUnstable = 0;
+                    ^
+LCFR.c:277:20: warning: unused variable 'actualLoadMask' [-Wunused-variable]
+     static uint8_t actualLoadMask = 0; // what will be used to display the leds
+                    ^
+LCFR.c: At top level:
+LCFR.c:35:13: warning: 'T_RecordTimeDisplay' declared 'static' but never defined [-Wunused-function]
+ static void T_RecordTimeDisplay (void *pvParameters);
+             ^
+LCFR.c:37:13: warning: 'T_UpdateThreshold' declared 'static' but never defined [-Wunused-function]
+ static void T_UpdateThreshold (void *pvParameters);
+             ^
+make: *** [obj/default/LCFR.o] Error 1
+12:34:48 **** Incremental Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+Info: Compiling LCFR.c to obj/default/LCFR.o
+nios2-elf-gcc -xc -MP -MMD -c -I../LCFR_bsp//HAL/inc -I../LCFR_bsp/ -I../LCFR_bsp//drivers/inc  -pipe -D__hal__ -DALT_NO_INSTRUCTION_EMULATION -DALT_SINGLE_THREADED    -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o obj/default/LCFR.o LCFR.c
+LCFR.c: In function 'button_interrupts_function':
+LCFR.c:95:21: warning: variable 'msg' set but not used [-Wunused-but-set-variable]
+     AdcCountMessage msg;
+                     ^
+LCFR.c:94:16: warning: unused variable 'xHigherPriorityTaskWoken' [-Wunused-variable]
+     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+                ^
+LCFR.c: In function 'T_LoadCtrl':
+LCFR.c:293:17: error: 'current_user_switch_input' undeclared (first use in this function)
+                 current_user_switch_input = receivedMsg.switch_state & 0x1F;
+                 ^
+LCFR.c:293:17: note: each undeclared identifier is reported only once for each function it appears in
+LCFR.c:297:17: error: 'current_stability_state' undeclared (first use in this function)
+                 current_stability_state = receivedMsg.stability_state;
+                 ^
+LCFR.c:282:20: warning: unused variable 'loadManaging' [-Wunused-variable]
+     static uint8_t loadManaging = 0;
+                    ^
+LCFR.c:280:20: warning: unused variable 'prevNetworkUnstable' [-Wunused-variable]
+     static uint8_t prevNetworkUnstable = 0; //init stability, and change as updates throughout code run
+                    ^
+LCFR.c:279:20: warning: unused variable 'networkUnstable' [-Wunused-variable]
+     static uint8_t networkUnstable = 0;
+                    ^
+LCFR.c:277:20: warning: unused variable 'actualLoadMask' [-Wunused-variable]
+     static uint8_t actualLoadMask = 0; // what will be used to display the leds
+                    ^
+LCFR.c: At top level:
+LCFR.c:35:13: warning: 'T_RecordTimeDisplay' declared 'static' but never defined [-Wunused-function]
+ static void T_RecordTimeDisplay (void *pvParameters);
+             ^
+LCFR.c:37:13: warning: 'T_UpdateThreshold' declared 'static' but never defined [-Wunused-function]
+ static void T_UpdateThreshold (void *pvParameters);
+             ^
+make: *** [obj/default/LCFR.o] Error 1
+12:35:41 **** Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+Info: Compiling LCFR.c to obj/default/LCFR.o
+nios2-elf-gcc -xc -MP -MMD -c -I../LCFR_bsp//HAL/inc -I../LCFR_bsp/ -I../LCFR_bsp//drivers/inc  -pipe -D__hal__ -DALT_NO_INSTRUCTION_EMULATION -DALT_SINGLE_THREADED    -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o obj/default/LCFR.o LCFR.c
+LCFR.c: In function 'button_interrupts_function':
+LCFR.c:95:21: warning: variable 'msg' set but not used [-Wunused-but-set-variable]
+     AdcCountMessage msg;
+                     ^
+LCFR.c:94:16: warning: unused variable 'xHigherPriorityTaskWoken' [-Wunused-variable]
+     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+                ^
+LCFR.c: In function 'T_LoadCtrl':
+LCFR.c:286:20: warning: unused variable 'loadManaging' [-Wunused-variable]
+     static uint8_t loadManaging = 0;
+                    ^
+LCFR.c:284:20: warning: unused variable 'prevNetworkUnstable' [-Wunused-variable]
+     static uint8_t prevNetworkUnstable = 0; //init stability, and change as updates throughout code run
+                    ^
+LCFR.c:283:20: warning: unused variable 'networkUnstable' [-Wunused-variable]
+     static uint8_t networkUnstable = 0;
+                    ^
+LCFR.c:281:20: warning: unused variable 'actualLoadMask' [-Wunused-variable]
+     static uint8_t actualLoadMask = 0; // what will be used to display the leds
+                    ^
+LCFR.c:277:20: warning: variable 'current_stability_state' set but not used [-Wunused-but-set-variable]
+     static uint8_t current_stability_state;
+                    ^
+LCFR.c: At top level:
+LCFR.c:35:13: warning: 'T_RecordTimeDisplay' declared 'static' but never defined [-Wunused-function]
+ static void T_RecordTimeDisplay (void *pvParameters);
+             ^
+LCFR.c:37:13: warning: 'T_UpdateThreshold' declared 'static' but never defined [-Wunused-function]
+ static void T_UpdateThreshold (void *pvParameters);
+             ^
+Info: Linking LCFR.elf
+nios2-elf-g++  -T'../LCFR_bsp//linker.x' -msys-crt0='../LCFR_bsp//obj/HAL/src/crt0.o' -msys-lib=hal_bsp -L../LCFR_bsp/   -Wl,-Map=LCFR.map   -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o LCFR.elf obj/default/FreeRTOS/croutine.o obj/default/FreeRTOS/event_groups.o obj/default/FreeRTOS/heap.o obj/default/FreeRTOS/list.o obj/default/FreeRTOS/port.o obj/default/FreeRTOS/queue.o obj/default/FreeRTOS/tasks.o obj/default/FreeRTOS/timers.o obj/default/LCFR.o obj/default/FreeRTOS/port_asm.o -lm -msys-lib=m
+nios2-elf-insert LCFR.elf --thread_model hal --cpu_name nios2 --qsys true --simulation_enabled false --id 7 --sidp 0x430f0 --timestamp 1393900972 --stderr_dev jtag_uart --stdin_dev jtag_uart --stdout_dev jtag_uart --sopc_system_name nios2 --quartus_project_dir "C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles" --sopcinfo C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles/software/LCFR_bsp/../../nios2.sopcinfo
+Info: (LCFR.elf) 610 KBytes program size (code + initialized data).
+Info:            130561 KBytes free for stack + heap.
+Info: Creating LCFR.objdump
+nios2-elf-objdump --disassemble --syms --all-header --source LCFR.elf >LCFR.objdump
+[LCFR build complete]
+12:35:43 **** Incremental Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+[LCFR build complete]
+12:37:25 **** Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+Info: Compiling LCFR.c to obj/default/LCFR.o
+nios2-elf-gcc -xc -MP -MMD -c -I../LCFR_bsp//HAL/inc -I../LCFR_bsp/ -I../LCFR_bsp//drivers/inc  -pipe -D__hal__ -DALT_NO_INSTRUCTION_EMULATION -DALT_SINGLE_THREADED    -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o obj/default/LCFR.o LCFR.c
+LCFR.c: In function 'button_interrupts_function':
+LCFR.c:95:21: warning: variable 'msg' set but not used [-Wunused-but-set-variable]
+     AdcCountMessage msg;
+                     ^
+LCFR.c:94:16: warning: unused variable 'xHigherPriorityTaskWoken' [-Wunused-variable]
+     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+                ^
+LCFR.c: In function 'T_LoadCtrl':
+LCFR.c:287:20: warning: unused variable 'loadManaging' [-Wunused-variable]
+     static uint8_t loadManaging = 0;
+                    ^
+LCFR.c:285:20: warning: unused variable 'prevNetworkUnstable' [-Wunused-variable]
+     static uint8_t prevNetworkUnstable = 0; //init stability, and change as updates throughout code run
+                    ^
+LCFR.c:284:20: warning: unused variable 'networkUnstable' [-Wunused-variable]
+     static uint8_t networkUnstable = 0;
+                    ^
+LCFR.c:282:20: warning: unused variable 'actualLoadMask' [-Wunused-variable]
+     static uint8_t actualLoadMask = 0; // what will be used to display the leds
+                    ^
+LCFR.c:278:20: warning: variable 'current_stability_state' set but not used [-Wunused-but-set-variable]
+     static uint8_t current_stability_state;
+                    ^
+LCFR.c: At top level:
+LCFR.c:35:13: warning: 'T_RecordTimeDisplay' declared 'static' but never defined [-Wunused-function]
+ static void T_RecordTimeDisplay (void *pvParameters);
+             ^
+LCFR.c:37:13: warning: 'T_UpdateThreshold' declared 'static' but never defined [-Wunused-function]
+ static void T_UpdateThreshold (void *pvParameters);
+             ^
+Info: Linking LCFR.elf
+nios2-elf-g++  -T'../LCFR_bsp//linker.x' -msys-crt0='../LCFR_bsp//obj/HAL/src/crt0.o' -msys-lib=hal_bsp -L../LCFR_bsp/   -Wl,-Map=LCFR.map   -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o LCFR.elf obj/default/FreeRTOS/croutine.o obj/default/FreeRTOS/event_groups.o obj/default/FreeRTOS/heap.o obj/default/FreeRTOS/list.o obj/default/FreeRTOS/port.o obj/default/FreeRTOS/queue.o obj/default/FreeRTOS/tasks.o obj/default/FreeRTOS/timers.o obj/default/LCFR.o obj/default/FreeRTOS/port_asm.o -lm -msys-lib=m
+nios2-elf-insert LCFR.elf --thread_model hal --cpu_name nios2 --qsys true --simulation_enabled false --id 7 --sidp 0x430f0 --timestamp 1393900972 --stderr_dev jtag_uart --stdin_dev jtag_uart --stdout_dev jtag_uart --sopc_system_name nios2 --quartus_project_dir "C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles" --sopcinfo C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles/software/LCFR_bsp/../../nios2.sopcinfo
+Info: (LCFR.elf) 610 KBytes program size (code + initialized data).
+Info:            130561 KBytes free for stack + heap.
+Info: Creating LCFR.objdump
+nios2-elf-objdump --disassemble --syms --all-header --source LCFR.elf >LCFR.objdump
+[LCFR build complete]
+12:37:27 **** Incremental Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+[LCFR build complete]
+12:38:19 **** Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+Info: Compiling LCFR.c to obj/default/LCFR.o
+nios2-elf-gcc -xc -MP -MMD -c -I../LCFR_bsp//HAL/inc -I../LCFR_bsp/ -I../LCFR_bsp//drivers/inc  -pipe -D__hal__ -DALT_NO_INSTRUCTION_EMULATION -DALT_SINGLE_THREADED    -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o obj/default/LCFR.o LCFR.c
+LCFR.c: In function 'button_interrupts_function':
+LCFR.c:95:21: warning: variable 'msg' set but not used [-Wunused-but-set-variable]
+     AdcCountMessage msg;
+                     ^
+LCFR.c:94:16: warning: unused variable 'xHigherPriorityTaskWoken' [-Wunused-variable]
+     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+                ^
+LCFR.c: In function 'T_LoadCtrl':
+LCFR.c:287:20: warning: unused variable 'loadManaging' [-Wunused-variable]
+     static uint8_t loadManaging = 0;
+                    ^
+LCFR.c:285:20: warning: unused variable 'prevNetworkUnstable' [-Wunused-variable]
+     static uint8_t prevNetworkUnstable = 0; //init stability, and change as updates throughout code run
+                    ^
+LCFR.c:284:20: warning: unused variable 'networkUnstable' [-Wunused-variable]
+     static uint8_t networkUnstable = 0;
+                    ^
+LCFR.c:282:20: warning: unused variable 'actualLoadMask' [-Wunused-variable]
+     static uint8_t actualLoadMask = 0; // what will be used to display the leds
+                    ^
+LCFR.c:278:20: warning: variable 'current_stability_state' set but not used [-Wunused-but-set-variable]
+     static uint8_t current_stability_state;
+                    ^
+LCFR.c: At top level:
+LCFR.c:35:13: warning: 'T_RecordTimeDisplay' declared 'static' but never defined [-Wunused-function]
+ static void T_RecordTimeDisplay (void *pvParameters);
+             ^
+LCFR.c:37:13: warning: 'T_UpdateThreshold' declared 'static' but never defined [-Wunused-function]
+ static void T_UpdateThreshold (void *pvParameters);
+             ^
+Info: Linking LCFR.elf
+nios2-elf-g++  -T'../LCFR_bsp//linker.x' -msys-crt0='../LCFR_bsp//obj/HAL/src/crt0.o' -msys-lib=hal_bsp -L../LCFR_bsp/   -Wl,-Map=LCFR.map   -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o LCFR.elf obj/default/FreeRTOS/croutine.o obj/default/FreeRTOS/event_groups.o obj/default/FreeRTOS/heap.o obj/default/FreeRTOS/list.o obj/default/FreeRTOS/port.o obj/default/FreeRTOS/queue.o obj/default/FreeRTOS/tasks.o obj/default/FreeRTOS/timers.o obj/default/LCFR.o obj/default/FreeRTOS/port_asm.o -lm -msys-lib=m
+nios2-elf-insert LCFR.elf --thread_model hal --cpu_name nios2 --qsys true --simulation_enabled false --id 7 --sidp 0x430f0 --timestamp 1393900972 --stderr_dev jtag_uart --stdin_dev jtag_uart --stdout_dev jtag_uart --sopc_system_name nios2 --quartus_project_dir "C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles" --sopcinfo C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles/software/LCFR_bsp/../../nios2.sopcinfo
+Info: (LCFR.elf) 610 KBytes program size (code + initialized data).
+Info:            130561 KBytes free for stack + heap.
+Info: Creating LCFR.objdump
+nios2-elf-objdump --disassemble --syms --all-header --source LCFR.elf >LCFR.objdump
+[LCFR build complete]
+12:38:21 **** Incremental Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+[LCFR build complete]
+12:39:14 **** Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+Info: Compiling LCFR.c to obj/default/LCFR.o
+nios2-elf-gcc -xc -MP -MMD -c -I../LCFR_bsp//HAL/inc -I../LCFR_bsp/ -I../LCFR_bsp//drivers/inc  -pipe -D__hal__ -DALT_NO_INSTRUCTION_EMULATION -DALT_SINGLE_THREADED    -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o obj/default/LCFR.o LCFR.c
+LCFR.c: In function 'button_interrupts_function':
+LCFR.c:95:21: warning: variable 'msg' set but not used [-Wunused-but-set-variable]
+     AdcCountMessage msg;
+                     ^
+LCFR.c:94:16: warning: unused variable 'xHigherPriorityTaskWoken' [-Wunused-variable]
+     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+                ^
+LCFR.c: In function 'T_LoadCtrl':
+LCFR.c:287:20: warning: unused variable 'loadManaging' [-Wunused-variable]
+     static uint8_t loadManaging = 0;
+                    ^
+LCFR.c:285:20: warning: unused variable 'prevNetworkUnstable' [-Wunused-variable]
+     static uint8_t prevNetworkUnstable = 0; //init stability, and change as updates throughout code run
+                    ^
+LCFR.c:284:20: warning: unused variable 'networkUnstable' [-Wunused-variable]
+     static uint8_t networkUnstable = 0;
+                    ^
+LCFR.c:282:20: warning: unused variable 'actualLoadMask' [-Wunused-variable]
+     static uint8_t actualLoadMask = 0; // what will be used to display the leds
+                    ^
+LCFR.c:280:20: warning: variable 'requestedLoadMask' set but not used [-Wunused-but-set-variable]
+     static uint8_t requestedLoadMask = 0; // user leds
+                    ^
+LCFR.c:278:20: warning: variable 'current_stability_state' set but not used [-Wunused-but-set-variable]
+     static uint8_t current_stability_state;
+                    ^
+LCFR.c: At top level:
+LCFR.c:35:13: warning: 'T_RecordTimeDisplay' declared 'static' but never defined [-Wunused-function]
+ static void T_RecordTimeDisplay (void *pvParameters);
+             ^
+LCFR.c:37:13: warning: 'T_UpdateThreshold' declared 'static' but never defined [-Wunused-function]
+ static void T_UpdateThreshold (void *pvParameters);
+             ^
+Info: Linking LCFR.elf
+nios2-elf-g++  -T'../LCFR_bsp//linker.x' -msys-crt0='../LCFR_bsp//obj/HAL/src/crt0.o' -msys-lib=hal_bsp -L../LCFR_bsp/   -Wl,-Map=LCFR.map   -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o LCFR.elf obj/default/FreeRTOS/croutine.o obj/default/FreeRTOS/event_groups.o obj/default/FreeRTOS/heap.o obj/default/FreeRTOS/list.o obj/default/FreeRTOS/port.o obj/default/FreeRTOS/queue.o obj/default/FreeRTOS/tasks.o obj/default/FreeRTOS/timers.o obj/default/LCFR.o obj/default/FreeRTOS/port_asm.o -lm -msys-lib=m
+nios2-elf-insert LCFR.elf --thread_model hal --cpu_name nios2 --qsys true --simulation_enabled false --id 7 --sidp 0x430f0 --timestamp 1393900972 --stderr_dev jtag_uart --stdin_dev jtag_uart --stdout_dev jtag_uart --sopc_system_name nios2 --quartus_project_dir "C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles" --sopcinfo C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles/software/LCFR_bsp/../../nios2.sopcinfo
+Info: (LCFR.elf) 610 KBytes program size (code + initialized data).
+Info:            130561 KBytes free for stack + heap.
+Info: Creating LCFR.objdump
+nios2-elf-objdump --disassemble --syms --all-header --source LCFR.elf >LCFR.objdump
+[LCFR build complete]
+12:39:16 **** Incremental Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+[LCFR build complete]
+12:39:56 **** Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+Info: Compiling LCFR.c to obj/default/LCFR.o
+nios2-elf-gcc -xc -MP -MMD -c -I../LCFR_bsp//HAL/inc -I../LCFR_bsp/ -I../LCFR_bsp//drivers/inc  -pipe -D__hal__ -DALT_NO_INSTRUCTION_EMULATION -DALT_SINGLE_THREADED    -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o obj/default/LCFR.o LCFR.c
+LCFR.c: In function 'button_interrupts_function':
+LCFR.c:95:21: warning: variable 'msg' set but not used [-Wunused-but-set-variable]
+     AdcCountMessage msg;
+                     ^
+LCFR.c:94:16: warning: unused variable 'xHigherPriorityTaskWoken' [-Wunused-variable]
+     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+                ^
+LCFR.c: In function 'T_LoadCtrl':
+LCFR.c:287:20: warning: unused variable 'loadManaging' [-Wunused-variable]
+     static uint8_t loadManaging = 0;
+                    ^
+LCFR.c:285:20: warning: unused variable 'prevNetworkUnstable' [-Wunused-variable]
+     static uint8_t prevNetworkUnstable = 0; //init stability, and change as updates throughout code run
+                    ^
+LCFR.c:284:20: warning: unused variable 'networkUnstable' [-Wunused-variable]
+     static uint8_t networkUnstable = 0;
+                    ^
+LCFR.c:282:20: warning: unused variable 'actualLoadMask' [-Wunused-variable]
+     static uint8_t actualLoadMask = 0; // what will be used to display the leds
+                    ^
+LCFR.c:280:20: warning: variable 'requestedLoadMask' set but not used [-Wunused-but-set-variable]
+     static uint8_t requestedLoadMask = 0; // user leds
+                    ^
+LCFR.c:278:20: warning: variable 'current_stability_state' set but not used [-Wunused-but-set-variable]
+     static uint8_t current_stability_state;
+                    ^
+LCFR.c: At top level:
+LCFR.c:35:13: warning: 'T_RecordTimeDisplay' declared 'static' but never defined [-Wunused-function]
+ static void T_RecordTimeDisplay (void *pvParameters);
+             ^
+LCFR.c:37:13: warning: 'T_UpdateThreshold' declared 'static' but never defined [-Wunused-function]
+ static void T_UpdateThreshold (void *pvParameters);
+             ^
+Info: Linking LCFR.elf
+nios2-elf-g++  -T'../LCFR_bsp//linker.x' -msys-crt0='../LCFR_bsp//obj/HAL/src/crt0.o' -msys-lib=hal_bsp -L../LCFR_bsp/   -Wl,-Map=LCFR.map   -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o LCFR.elf obj/default/FreeRTOS/croutine.o obj/default/FreeRTOS/event_groups.o obj/default/FreeRTOS/heap.o obj/default/FreeRTOS/list.o obj/default/FreeRTOS/port.o obj/default/FreeRTOS/queue.o obj/default/FreeRTOS/tasks.o obj/default/FreeRTOS/timers.o obj/default/LCFR.o obj/default/FreeRTOS/port_asm.o -lm -msys-lib=m
+nios2-elf-insert LCFR.elf --thread_model hal --cpu_name nios2 --qsys true --simulation_enabled false --id 7 --sidp 0x430f0 --timestamp 1393900972 --stderr_dev jtag_uart --stdin_dev jtag_uart --stdout_dev jtag_uart --sopc_system_name nios2 --quartus_project_dir "C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles" --sopcinfo C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles/software/LCFR_bsp/../../nios2.sopcinfo
+Info: (LCFR.elf) 610 KBytes program size (code + initialized data).
+Info:            130561 KBytes free for stack + heap.
+Info: Creating LCFR.objdump
+nios2-elf-objdump --disassemble --syms --all-header --source LCFR.elf >LCFR.objdump
+[LCFR build complete]
+12:39:59 **** Incremental Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+[LCFR build complete]
+12:43:19 **** Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+Info: Compiling LCFR.c to obj/default/LCFR.o
+nios2-elf-gcc -xc -MP -MMD -c -I../LCFR_bsp//HAL/inc -I../LCFR_bsp/ -I../LCFR_bsp//drivers/inc  -pipe -D__hal__ -DALT_NO_INSTRUCTION_EMULATION -DALT_SINGLE_THREADED    -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o obj/default/LCFR.o LCFR.c
+LCFR.c: In function 'button_interrupts_function':
+LCFR.c:95:21: warning: variable 'msg' set but not used [-Wunused-but-set-variable]
+     AdcCountMessage msg;
+                     ^
+LCFR.c:94:16: warning: unused variable 'xHigherPriorityTaskWoken' [-Wunused-variable]
+     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+                ^
+LCFR.c: In function 'T_LoadCtrl':
+LCFR.c:287:20: warning: unused variable 'loadManaging' [-Wunused-variable]
+     static uint8_t loadManaging = 0;
+                    ^
+LCFR.c:285:20: warning: unused variable 'prevNetworkUnstable' [-Wunused-variable]
+     static uint8_t prevNetworkUnstable = 0; //init stability, and change as updates throughout code run
+                    ^
+LCFR.c:284:20: warning: unused variable 'networkUnstable' [-Wunused-variable]
+     static uint8_t networkUnstable = 0;
+                    ^
+LCFR.c:282:20: warning: unused variable 'actualLoadMask' [-Wunused-variable]
+     static uint8_t actualLoadMask = 0; // what will be used to display the leds
+                    ^
+LCFR.c:280:20: warning: variable 'requestedLoadMask' set but not used [-Wunused-but-set-variable]
+     static uint8_t requestedLoadMask = 0; // user leds
+                    ^
+LCFR.c:278:20: warning: variable 'current_stability_state' set but not used [-Wunused-but-set-variable]
+     static uint8_t current_stability_state;
+                    ^
+LCFR.c: At top level:
+LCFR.c:35:13: warning: 'T_RecordTimeDisplay' declared 'static' but never defined [-Wunused-function]
+ static void T_RecordTimeDisplay (void *pvParameters);
+             ^
+LCFR.c:37:13: warning: 'T_UpdateThreshold' declared 'static' but never defined [-Wunused-function]
+ static void T_UpdateThreshold (void *pvParameters);
+             ^
+Info: Linking LCFR.elf
+nios2-elf-g++  -T'../LCFR_bsp//linker.x' -msys-crt0='../LCFR_bsp//obj/HAL/src/crt0.o' -msys-lib=hal_bsp -L../LCFR_bsp/   -Wl,-Map=LCFR.map   -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o LCFR.elf obj/default/FreeRTOS/croutine.o obj/default/FreeRTOS/event_groups.o obj/default/FreeRTOS/heap.o obj/default/FreeRTOS/list.o obj/default/FreeRTOS/port.o obj/default/FreeRTOS/queue.o obj/default/FreeRTOS/tasks.o obj/default/FreeRTOS/timers.o obj/default/LCFR.o obj/default/FreeRTOS/port_asm.o -lm -msys-lib=m
+nios2-elf-insert LCFR.elf --thread_model hal --cpu_name nios2 --qsys true --simulation_enabled false --id 7 --sidp 0x430f0 --timestamp 1393900972 --stderr_dev jtag_uart --stdin_dev jtag_uart --stdout_dev jtag_uart --sopc_system_name nios2 --quartus_project_dir "C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles" --sopcinfo C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles/software/LCFR_bsp/../../nios2.sopcinfo
+Info: (LCFR.elf) 610 KBytes program size (code + initialized data).
+Info:            130561 KBytes free for stack + heap.
+Info: Creating LCFR.objdump
+nios2-elf-objdump --disassemble --syms --all-header --source LCFR.elf >LCFR.objdump
+[LCFR build complete]
+12:43:21 **** Incremental Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+[LCFR build complete]
+12:56:00 **** Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+Info: Compiling LCFR.c to obj/default/LCFR.o
+nios2-elf-gcc -xc -MP -MMD -c -I../LCFR_bsp//HAL/inc -I../LCFR_bsp/ -I../LCFR_bsp//drivers/inc  -pipe -D__hal__ -DALT_NO_INSTRUCTION_EMULATION -DALT_SINGLE_THREADED    -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o obj/default/LCFR.o LCFR.c
+LCFR.c: In function 'button_interrupts_function':
+LCFR.c:97:21: warning: variable 'msg' set but not used [-Wunused-but-set-variable]
+     AdcCountMessage msg;
+                     ^
+LCFR.c:96:16: warning: unused variable 'xHigherPriorityTaskWoken' [-Wunused-variable]
+     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+                ^
+In file included from LCFR.c:13:0:
+LCFR.c: In function 'main':
+LCFR.c:137:38: error: 'uint_16' undeclared (first use in this function)
+     Q_newLed = xQueueCreate(5,sizeof(uint_16));
+                                      ^
+freertos/queue.h:173:87: note: in definition of macro 'xQueueCreate'
+ #define xQueueCreate( uxQueueLength, uxItemSize ) xQueueGenericCreate( uxQueueLength, uxItemSize, queueQUEUE_TYPE_BASE )
+                                                                                       ^
+LCFR.c:137:38: note: each undeclared identifier is reported only once for each function it appears in
+     Q_newLed = xQueueCreate(5,sizeof(uint_16));
+                                      ^
+freertos/queue.h:173:87: note: in definition of macro 'xQueueCreate'
+ #define xQueueCreate( uxQueueLength, uxItemSize ) xQueueGenericCreate( uxQueueLength, uxItemSize, queueQUEUE_TYPE_BASE )
+                                                                                       ^
+LCFR.c: In function 'T_LoadCtrl':
+LCFR.c:290:20: warning: unused variable 'loadManaging' [-Wunused-variable]
+     static uint8_t loadManaging = 0;
+                    ^
+LCFR.c:288:20: warning: unused variable 'prevNetworkUnstable' [-Wunused-variable]
+     static uint8_t prevNetworkUnstable = 0; //init stability, and change as updates throughout code run
+                    ^
+LCFR.c:287:20: warning: unused variable 'networkUnstable' [-Wunused-variable]
+     static uint8_t networkUnstable = 0;
+                    ^
+LCFR.c:285:20: warning: unused variable 'actualLoadMask' [-Wunused-variable]
+     static uint8_t actualLoadMask = 0; // what will be used to display the leds
+                    ^
+LCFR.c:284:20: warning: unused variable 'shedLoadMask' [-Wunused-variable]
+     static uint8_t shedLoadMask = 0; // relay leds
+                    ^
+LCFR.c:283:20: warning: variable 'requestedLoadMask' set but not used [-Wunused-but-set-variable]
+     static uint8_t requestedLoadMask = 0; // user leds
+                    ^
+LCFR.c:281:20: warning: variable 'current_stability_state' set but not used [-Wunused-but-set-variable]
+     static uint8_t current_stability_state;
+                    ^
+LCFR.c: At top level:
+LCFR.c:39:13: warning: 'T_UpdateLeds' used but never defined
+ static void T_UpdateLeds(void *pvParameters);
+             ^
+LCFR.c:36:13: warning: 'T_RecordTimeDisplay' declared 'static' but never defined [-Wunused-function]
+ static void T_RecordTimeDisplay (void *pvParameters);
+             ^
+LCFR.c:38:13: warning: 'T_UpdateThreshold' declared 'static' but never defined [-Wunused-function]
+ static void T_UpdateThreshold (void *pvParameters);
+             ^
+LCFR.c:332:13: warning: 'T_UpdateLed' defined but not used [-Wunused-function]
+ static void T_UpdateLed(void *pvParameters)
+             ^
+make: *** [obj/default/LCFR.o] Error 1
+12:56:01 **** Incremental Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+Info: Compiling LCFR.c to obj/default/LCFR.o
+nios2-elf-gcc -xc -MP -MMD -c -I../LCFR_bsp//HAL/inc -I../LCFR_bsp/ -I../LCFR_bsp//drivers/inc  -pipe -D__hal__ -DALT_NO_INSTRUCTION_EMULATION -DALT_SINGLE_THREADED    -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o obj/default/LCFR.o LCFR.c
+LCFR.c: In function 'button_interrupts_function':
+LCFR.c:97:21: warning: variable 'msg' set but not used [-Wunused-but-set-variable]
+     AdcCountMessage msg;
+                     ^
+LCFR.c:96:16: warning: unused variable 'xHigherPriorityTaskWoken' [-Wunused-variable]
+     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+                ^
+In file included from LCFR.c:13:0:
+LCFR.c: In function 'main':
+LCFR.c:137:38: error: 'uint_16' undeclared (first use in this function)
+     Q_newLed = xQueueCreate(5,sizeof(uint_16));
+                                      ^
+freertos/queue.h:173:87: note: in definition of macro 'xQueueCreate'
+ #define xQueueCreate( uxQueueLength, uxItemSize ) xQueueGenericCreate( uxQueueLength, uxItemSize, queueQUEUE_TYPE_BASE )
+                                                                                       ^
+LCFR.c:137:38: note: each undeclared identifier is reported only once for each function it appears in
+     Q_newLed = xQueueCreate(5,sizeof(uint_16));
+                                      ^
+freertos/queue.h:173:87: note: in definition of macro 'xQueueCreate'
+ #define xQueueCreate( uxQueueLength, uxItemSize ) xQueueGenericCreate( uxQueueLength, uxItemSize, queueQUEUE_TYPE_BASE )
+                                                                                       ^
+LCFR.c: In function 'T_LoadCtrl':
+LCFR.c:290:20: warning: unused variable 'loadManaging' [-Wunused-variable]
+     static uint8_t loadManaging = 0;
+                    ^
+LCFR.c:288:20: warning: unused variable 'prevNetworkUnstable' [-Wunused-variable]
+     static uint8_t prevNetworkUnstable = 0; //init stability, and change as updates throughout code run
+                    ^
+LCFR.c:287:20: warning: unused variable 'networkUnstable' [-Wunused-variable]
+     static uint8_t networkUnstable = 0;
+                    ^
+LCFR.c:285:20: warning: unused variable 'actualLoadMask' [-Wunused-variable]
+     static uint8_t actualLoadMask = 0; // what will be used to display the leds
+                    ^
+LCFR.c:284:20: warning: unused variable 'shedLoadMask' [-Wunused-variable]
+     static uint8_t shedLoadMask = 0; // relay leds
+                    ^
+LCFR.c:283:20: warning: variable 'requestedLoadMask' set but not used [-Wunused-but-set-variable]
+     static uint8_t requestedLoadMask = 0; // user leds
+                    ^
+LCFR.c:281:20: warning: variable 'current_stability_state' set but not used [-Wunused-but-set-variable]
+     static uint8_t current_stability_state;
+                    ^
+LCFR.c: At top level:
+LCFR.c:39:13: warning: 'T_UpdateLeds' used but never defined
+ static void T_UpdateLeds(void *pvParameters);
+             ^
+LCFR.c:36:13: warning: 'T_RecordTimeDisplay' declared 'static' but never defined [-Wunused-function]
+ static void T_RecordTimeDisplay (void *pvParameters);
+             ^
+LCFR.c:38:13: warning: 'T_UpdateThreshold' declared 'static' but never defined [-Wunused-function]
+ static void T_UpdateThreshold (void *pvParameters);
+             ^
+LCFR.c:332:13: warning: 'T_UpdateLed' defined but not used [-Wunused-function]
+ static void T_UpdateLed(void *pvParameters)
+             ^
+make: *** [obj/default/LCFR.o] Error 1
+12:57:24 **** Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+Info: Compiling LCFR.c to obj/default/LCFR.o
+nios2-elf-gcc -xc -MP -MMD -c -I../LCFR_bsp//HAL/inc -I../LCFR_bsp/ -I../LCFR_bsp//drivers/inc  -pipe -D__hal__ -DALT_NO_INSTRUCTION_EMULATION -DALT_SINGLE_THREADED    -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o obj/default/LCFR.o LCFR.c
+LCFR.c: In function 'button_interrupts_function':
+LCFR.c:97:21: warning: variable 'msg' set but not used [-Wunused-but-set-variable]
+     AdcCountMessage msg;
+                     ^
+LCFR.c:96:16: warning: unused variable 'xHigherPriorityTaskWoken' [-Wunused-variable]
+     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+                ^
+In file included from LCFR.c:12:0:
+LCFR.c: In function 'main':
+LCFR.c:145:17: error: 'T_UpdateLed' undeclared (first use in this function)
+     xTaskCreate(T_UpdateLed, "Print", configMINIMAL_STACK_SIZE, NULL,T_UpdateLed_PRIORITY, NULL);
+                 ^
+freertos/task.h:344:120: note: in definition of macro 'xTaskCreate'
+ #define xTaskCreate( pvTaskCode, pcName, usStackDepth, pvParameters, uxPriority, pxCreatedTask ) xTaskGenericCreate( ( pvTaskCode ), ( pcName ), ( usStackDepth ), ( pvParameters ), ( uxPriority ), ( pxCreatedTask ), ( NULL ), ( NULL ) )
+                                                                                                                        ^
+LCFR.c:145:17: note: each undeclared identifier is reported only once for each function it appears in
+     xTaskCreate(T_UpdateLed, "Print", configMINIMAL_STACK_SIZE, NULL,T_UpdateLed_PRIORITY, NULL);
+                 ^
+freertos/task.h:344:120: note: in definition of macro 'xTaskCreate'
+ #define xTaskCreate( pvTaskCode, pcName, usStackDepth, pvParameters, uxPriority, pxCreatedTask ) xTaskGenericCreate( ( pvTaskCode ), ( pcName ), ( usStackDepth ), ( pvParameters ), ( uxPriority ), ( pxCreatedTask ), ( NULL ), ( NULL ) )
+                                                                                                                        ^
+LCFR.c: In function 'T_LoadCtrl':
+LCFR.c:290:20: warning: unused variable 'loadManaging' [-Wunused-variable]
+     static uint8_t loadManaging = 0;
+                    ^
+LCFR.c:288:20: warning: unused variable 'prevNetworkUnstable' [-Wunused-variable]
+     static uint8_t prevNetworkUnstable = 0; //init stability, and change as updates throughout code run
+                    ^
+LCFR.c:287:20: warning: unused variable 'networkUnstable' [-Wunused-variable]
+     static uint8_t networkUnstable = 0;
+                    ^
+LCFR.c:285:20: warning: unused variable 'actualLoadMask' [-Wunused-variable]
+     static uint8_t actualLoadMask = 0; // what will be used to display the leds
+                    ^
+LCFR.c:284:20: warning: unused variable 'shedLoadMask' [-Wunused-variable]
+     static uint8_t shedLoadMask = 0; // relay leds
+                    ^
+LCFR.c:283:20: warning: variable 'requestedLoadMask' set but not used [-Wunused-but-set-variable]
+     static uint8_t requestedLoadMask = 0; // user leds
+                    ^
+LCFR.c:281:20: warning: variable 'current_stability_state' set but not used [-Wunused-but-set-variable]
+     static uint8_t current_stability_state;
+                    ^
+LCFR.c: At top level:
+LCFR.c:36:13: warning: 'T_RecordTimeDisplay' declared 'static' but never defined [-Wunused-function]
+ static void T_RecordTimeDisplay (void *pvParameters);
+             ^
+LCFR.c:38:13: warning: 'T_UpdateThreshold' declared 'static' but never defined [-Wunused-function]
+ static void T_UpdateThreshold (void *pvParameters);
+             ^
+LCFR.c:39:13: warning: 'T_UpdateLeds' declared 'static' but never defined [-Wunused-function]
+ static void T_UpdateLeds(void *pvParameters);
+             ^
+LCFR.c:332:13: warning: 'T_UpdateLed' defined but not used [-Wunused-function]
+ static void T_UpdateLed(void *pvParameters)
+             ^
+make: *** [obj/default/LCFR.o] Error 1
+12:57:25 **** Incremental Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+Info: Compiling LCFR.c to obj/default/LCFR.o
+nios2-elf-gcc -xc -MP -MMD -c -I../LCFR_bsp//HAL/inc -I../LCFR_bsp/ -I../LCFR_bsp//drivers/inc  -pipe -D__hal__ -DALT_NO_INSTRUCTION_EMULATION -DALT_SINGLE_THREADED    -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o obj/default/LCFR.o LCFR.c
+LCFR.c: In function 'button_interrupts_function':
+LCFR.c:97:21: warning: variable 'msg' set but not used [-Wunused-but-set-variable]
+     AdcCountMessage msg;
+                     ^
+LCFR.c:96:16: warning: unused variable 'xHigherPriorityTaskWoken' [-Wunused-variable]
+     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+                ^
+In file included from LCFR.c:12:0:
+LCFR.c: In function 'main':
+LCFR.c:145:17: error: 'T_UpdateLed' undeclared (first use in this function)
+     xTaskCreate(T_UpdateLed, "Print", configMINIMAL_STACK_SIZE, NULL,T_UpdateLed_PRIORITY, NULL);
+                 ^
+freertos/task.h:344:120: note: in definition of macro 'xTaskCreate'
+ #define xTaskCreate( pvTaskCode, pcName, usStackDepth, pvParameters, uxPriority, pxCreatedTask ) xTaskGenericCreate( ( pvTaskCode ), ( pcName ), ( usStackDepth ), ( pvParameters ), ( uxPriority ), ( pxCreatedTask ), ( NULL ), ( NULL ) )
+                                                                                                                        ^
+LCFR.c:145:17: note: each undeclared identifier is reported only once for each function it appears in
+     xTaskCreate(T_UpdateLed, "Print", configMINIMAL_STACK_SIZE, NULL,T_UpdateLed_PRIORITY, NULL);
+                 ^
+freertos/task.h:344:120: note: in definition of macro 'xTaskCreate'
+ #define xTaskCreate( pvTaskCode, pcName, usStackDepth, pvParameters, uxPriority, pxCreatedTask ) xTaskGenericCreate( ( pvTaskCode ), ( pcName ), ( usStackDepth ), ( pvParameters ), ( uxPriority ), ( pxCreatedTask ), ( NULL ), ( NULL ) )
+                                                                                                                        ^
+LCFR.c: In function 'T_LoadCtrl':
+LCFR.c:290:20: warning: unused variable 'loadManaging' [-Wunused-variable]
+     static uint8_t loadManaging = 0;
+                    ^
+LCFR.c:288:20: warning: unused variable 'prevNetworkUnstable' [-Wunused-variable]
+     static uint8_t prevNetworkUnstable = 0; //init stability, and change as updates throughout code run
+                    ^
+LCFR.c:287:20: warning: unused variable 'networkUnstable' [-Wunused-variable]
+     static uint8_t networkUnstable = 0;
+                    ^
+LCFR.c:285:20: warning: unused variable 'actualLoadMask' [-Wunused-variable]
+     static uint8_t actualLoadMask = 0; // what will be used to display the leds
+                    ^
+LCFR.c:284:20: warning: unused variable 'shedLoadMask' [-Wunused-variable]
+     static uint8_t shedLoadMask = 0; // relay leds
+                    ^
+LCFR.c:283:20: warning: variable 'requestedLoadMask' set but not used [-Wunused-but-set-variable]
+     static uint8_t requestedLoadMask = 0; // user leds
+                    ^
+LCFR.c:281:20: warning: variable 'current_stability_state' set but not used [-Wunused-but-set-variable]
+     static uint8_t current_stability_state;
+                    ^
+LCFR.c: At top level:
+LCFR.c:36:13: warning: 'T_RecordTimeDisplay' declared 'static' but never defined [-Wunused-function]
+ static void T_RecordTimeDisplay (void *pvParameters);
+             ^
+LCFR.c:38:13: warning: 'T_UpdateThreshold' declared 'static' but never defined [-Wunused-function]
+ static void T_UpdateThreshold (void *pvParameters);
+             ^
+LCFR.c:39:13: warning: 'T_UpdateLeds' declared 'static' but never defined [-Wunused-function]
+ static void T_UpdateLeds(void *pvParameters);
+             ^
+LCFR.c:332:13: warning: 'T_UpdateLed' defined but not used [-Wunused-function]
+ static void T_UpdateLed(void *pvParameters)
+             ^
+make: *** [obj/default/LCFR.o] Error 1
+12:58:10 **** Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+Info: Compiling LCFR.c to obj/default/LCFR.o
+nios2-elf-gcc -xc -MP -MMD -c -I../LCFR_bsp//HAL/inc -I../LCFR_bsp/ -I../LCFR_bsp//drivers/inc  -pipe -D__hal__ -DALT_NO_INSTRUCTION_EMULATION -DALT_SINGLE_THREADED    -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o obj/default/LCFR.o LCFR.c
+LCFR.c: In function 'button_interrupts_function':
+LCFR.c:97:21: warning: variable 'msg' set but not used [-Wunused-but-set-variable]
+     AdcCountMessage msg;
+                     ^
+LCFR.c:96:16: warning: unused variable 'xHigherPriorityTaskWoken' [-Wunused-variable]
+     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+                ^
+LCFR.c: In function 'T_LoadCtrl':
+LCFR.c:290:20: warning: unused variable 'loadManaging' [-Wunused-variable]
+     static uint8_t loadManaging = 0;
+                    ^
+LCFR.c:288:20: warning: unused variable 'prevNetworkUnstable' [-Wunused-variable]
+     static uint8_t prevNetworkUnstable = 0; //init stability, and change as updates throughout code run
+                    ^
+LCFR.c:287:20: warning: unused variable 'networkUnstable' [-Wunused-variable]
+     static uint8_t networkUnstable = 0;
+                    ^
+LCFR.c:285:20: warning: unused variable 'actualLoadMask' [-Wunused-variable]
+     static uint8_t actualLoadMask = 0; // what will be used to display the leds
+                    ^
+LCFR.c:284:20: warning: unused variable 'shedLoadMask' [-Wunused-variable]
+     static uint8_t shedLoadMask = 0; // relay leds
+                    ^
+LCFR.c:283:20: warning: variable 'requestedLoadMask' set but not used [-Wunused-but-set-variable]
+     static uint8_t requestedLoadMask = 0; // user leds
+                    ^
+LCFR.c:281:20: warning: variable 'current_stability_state' set but not used [-Wunused-but-set-variable]
+     static uint8_t current_stability_state;
+                    ^
+LCFR.c: At top level:
+LCFR.c:36:13: warning: 'T_RecordTimeDisplay' declared 'static' but never defined [-Wunused-function]
+ static void T_RecordTimeDisplay (void *pvParameters);
+             ^
+LCFR.c:38:13: warning: 'T_UpdateThreshold' declared 'static' but never defined [-Wunused-function]
+ static void T_UpdateThreshold (void *pvParameters);
+             ^
+Info: Linking LCFR.elf
+nios2-elf-g++  -T'../LCFR_bsp//linker.x' -msys-crt0='../LCFR_bsp//obj/HAL/src/crt0.o' -msys-lib=hal_bsp -L../LCFR_bsp/   -Wl,-Map=LCFR.map   -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o LCFR.elf obj/default/FreeRTOS/croutine.o obj/default/FreeRTOS/event_groups.o obj/default/FreeRTOS/heap.o obj/default/FreeRTOS/list.o obj/default/FreeRTOS/port.o obj/default/FreeRTOS/queue.o obj/default/FreeRTOS/tasks.o obj/default/FreeRTOS/timers.o obj/default/LCFR.o obj/default/FreeRTOS/port_asm.o -lm -msys-lib=m
+nios2-elf-insert LCFR.elf --thread_model hal --cpu_name nios2 --qsys true --simulation_enabled false --id 7 --sidp 0x430f0 --timestamp 1393900972 --stderr_dev jtag_uart --stdin_dev jtag_uart --stdout_dev jtag_uart --sopc_system_name nios2 --quartus_project_dir "C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles" --sopcinfo C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles/software/LCFR_bsp/../../nios2.sopcinfo
+Info: (LCFR.elf) 610 KBytes program size (code + initialized data).
+Info:            130561 KBytes free for stack + heap.
+Info: Creating LCFR.objdump
+nios2-elf-objdump --disassemble --syms --all-header --source LCFR.elf >LCFR.objdump
+[LCFR build complete]
+12:58:12 **** Incremental Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+[LCFR build complete]
+13:00:33 **** Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+Info: Compiling LCFR.c to obj/default/LCFR.o
+nios2-elf-gcc -xc -MP -MMD -c -I../LCFR_bsp//HAL/inc -I../LCFR_bsp/ -I../LCFR_bsp//drivers/inc  -pipe -D__hal__ -DALT_NO_INSTRUCTION_EMULATION -DALT_SINGLE_THREADED    -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o obj/default/LCFR.o LCFR.c
+LCFR.c: In function 'button_interrupts_function':
+LCFR.c:97:21: warning: variable 'msg' set but not used [-Wunused-but-set-variable]
+     AdcCountMessage msg;
+                     ^
+LCFR.c:96:16: warning: unused variable 'xHigherPriorityTaskWoken' [-Wunused-variable]
+     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+                ^
+LCFR.c: In function 'T_LoadCtrl':
+LCFR.c:292:20: warning: unused variable 'loadManaging' [-Wunused-variable]
+     static uint8_t loadManaging = 0;
+                    ^
+LCFR.c:290:20: warning: unused variable 'prevNetworkUnstable' [-Wunused-variable]
+     static uint8_t prevNetworkUnstable = 0; //init stability, and change as updates throughout code run
+                    ^
+LCFR.c:289:20: warning: unused variable 'networkUnstable' [-Wunused-variable]
+     static uint8_t networkUnstable = 0;
+                    ^
+LCFR.c:287:20: warning: unused variable 'actualLoadMask' [-Wunused-variable]
+     static uint8_t actualLoadMask = 0; // what will be used to display the leds
+                    ^
+LCFR.c:286:20: warning: unused variable 'shedLoadMask' [-Wunused-variable]
+     static uint8_t shedLoadMask = 0; // relay leds
+                    ^
+LCFR.c:285:20: warning: variable 'requestedLoadMask' set but not used [-Wunused-but-set-variable]
+     static uint8_t requestedLoadMask = 0; // user leds
+                    ^
+LCFR.c:283:20: warning: variable 'current_stability_state' set but not used [-Wunused-but-set-variable]
+     static uint8_t current_stability_state;
+                    ^
+LCFR.c: At top level:
+LCFR.c:36:13: warning: 'T_RecordTimeDisplay' declared 'static' but never defined [-Wunused-function]
+ static void T_RecordTimeDisplay (void *pvParameters);
+             ^
+LCFR.c:38:13: warning: 'T_UpdateThreshold' declared 'static' but never defined [-Wunused-function]
+ static void T_UpdateThreshold (void *pvParameters);
+             ^
+Info: Linking LCFR.elf
+nios2-elf-g++  -T'../LCFR_bsp//linker.x' -msys-crt0='../LCFR_bsp//obj/HAL/src/crt0.o' -msys-lib=hal_bsp -L../LCFR_bsp/   -Wl,-Map=LCFR.map   -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o LCFR.elf obj/default/FreeRTOS/croutine.o obj/default/FreeRTOS/event_groups.o obj/default/FreeRTOS/heap.o obj/default/FreeRTOS/list.o obj/default/FreeRTOS/port.o obj/default/FreeRTOS/queue.o obj/default/FreeRTOS/tasks.o obj/default/FreeRTOS/timers.o obj/default/LCFR.o obj/default/FreeRTOS/port_asm.o -lm -msys-lib=m
+nios2-elf-insert LCFR.elf --thread_model hal --cpu_name nios2 --qsys true --simulation_enabled false --id 7 --sidp 0x430f0 --timestamp 1393900972 --stderr_dev jtag_uart --stdin_dev jtag_uart --stdout_dev jtag_uart --sopc_system_name nios2 --quartus_project_dir "C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles" --sopcinfo C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles/software/LCFR_bsp/../../nios2.sopcinfo
+Info: (LCFR.elf) 610 KBytes program size (code + initialized data).
+Info:            130561 KBytes free for stack + heap.
+Info: Creating LCFR.objdump
+nios2-elf-objdump --disassemble --syms --all-header --source LCFR.elf >LCFR.objdump
+[LCFR build complete]
+13:00:35 **** Incremental Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+[LCFR build complete]
+13:02:40 **** Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+Info: Compiling LCFR.c to obj/default/LCFR.o
+nios2-elf-gcc -xc -MP -MMD -c -I../LCFR_bsp//HAL/inc -I../LCFR_bsp/ -I../LCFR_bsp//drivers/inc  -pipe -D__hal__ -DALT_NO_INSTRUCTION_EMULATION -DALT_SINGLE_THREADED    -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o obj/default/LCFR.o LCFR.c
+LCFR.c: In function 'button_interrupts_function':
+LCFR.c:97:21: warning: variable 'msg' set but not used [-Wunused-but-set-variable]
+     AdcCountMessage msg;
+                     ^
+LCFR.c:96:16: warning: unused variable 'xHigherPriorityTaskWoken' [-Wunused-variable]
+     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+                ^
+LCFR.c: In function 'T_LoadCtrl':
+LCFR.c:292:20: warning: unused variable 'loadManaging' [-Wunused-variable]
+     static uint8_t loadManaging = 0;
+                    ^
+LCFR.c:290:20: warning: unused variable 'prevNetworkUnstable' [-Wunused-variable]
+     static uint8_t prevNetworkUnstable = 0; //init stability, and change as updates throughout code run
+                    ^
+LCFR.c:289:20: warning: unused variable 'networkUnstable' [-Wunused-variable]
+     static uint8_t networkUnstable = 0;
+                    ^
+LCFR.c:287:20: warning: unused variable 'actualLoadMask' [-Wunused-variable]
+     static uint8_t actualLoadMask = 0; // what will be used to display the leds
+                    ^
+LCFR.c:286:20: warning: unused variable 'shedLoadMask' [-Wunused-variable]
+     static uint8_t shedLoadMask = 0; // relay leds
+                    ^
+LCFR.c:285:20: warning: variable 'requestedLoadMask' set but not used [-Wunused-but-set-variable]
+     static uint8_t requestedLoadMask = 0; // user leds
+                    ^
+LCFR.c:283:20: warning: variable 'current_stability_state' set but not used [-Wunused-but-set-variable]
+     static uint8_t current_stability_state;
+                    ^
+LCFR.c: At top level:
+LCFR.c:36:13: warning: 'T_RecordTimeDisplay' declared 'static' but never defined [-Wunused-function]
+ static void T_RecordTimeDisplay (void *pvParameters);
+             ^
+LCFR.c:38:13: warning: 'T_UpdateThreshold' declared 'static' but never defined [-Wunused-function]
+ static void T_UpdateThreshold (void *pvParameters);
+             ^
+Info: Linking LCFR.elf
+nios2-elf-g++  -T'../LCFR_bsp//linker.x' -msys-crt0='../LCFR_bsp//obj/HAL/src/crt0.o' -msys-lib=hal_bsp -L../LCFR_bsp/   -Wl,-Map=LCFR.map   -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o LCFR.elf obj/default/FreeRTOS/croutine.o obj/default/FreeRTOS/event_groups.o obj/default/FreeRTOS/heap.o obj/default/FreeRTOS/list.o obj/default/FreeRTOS/port.o obj/default/FreeRTOS/queue.o obj/default/FreeRTOS/tasks.o obj/default/FreeRTOS/timers.o obj/default/LCFR.o obj/default/FreeRTOS/port_asm.o -lm -msys-lib=m
+nios2-elf-insert LCFR.elf --thread_model hal --cpu_name nios2 --qsys true --simulation_enabled false --id 7 --sidp 0x430f0 --timestamp 1393900972 --stderr_dev jtag_uart --stdin_dev jtag_uart --stdout_dev jtag_uart --sopc_system_name nios2 --quartus_project_dir "C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles" --sopcinfo C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles/software/LCFR_bsp/../../nios2.sopcinfo
+Info: (LCFR.elf) 610 KBytes program size (code + initialized data).
+Info:            130561 KBytes free for stack + heap.
+Info: Creating LCFR.objdump
+nios2-elf-objdump --disassemble --syms --all-header --source LCFR.elf >LCFR.objdump
+[LCFR build complete]
+13:02:43 **** Incremental Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+[LCFR build complete]
+13:04:00 **** Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+[LCFR build complete]
+13:04:03 **** Incremental Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+Info: Compiling LCFR.c to obj/default/LCFR.o
+nios2-elf-gcc -xc -MP -MMD -c -I../LCFR_bsp//HAL/inc -I../LCFR_bsp/ -I../LCFR_bsp//drivers/inc  -pipe -D__hal__ -DALT_NO_INSTRUCTION_EMULATION -DALT_SINGLE_THREADED    -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o obj/default/LCFR.o LCFR.c
+LCFR.c: In function 'button_interrupts_function':
+LCFR.c:97:21: warning: variable 'msg' set but not used [-Wunused-but-set-variable]
+     AdcCountMessage msg;
+                     ^
+LCFR.c:96:16: warning: unused variable 'xHigherPriorityTaskWoken' [-Wunused-variable]
+     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+                ^
+LCFR.c: In function 'T_LoadCtrl':
+LCFR.c:292:20: warning: unused variable 'loadManaging' [-Wunused-variable]
+     static uint8_t loadManaging = 0;
+                    ^
+LCFR.c:290:20: warning: unused variable 'prevNetworkUnstable' [-Wunused-variable]
+     static uint8_t prevNetworkUnstable = 0; //init stability, and change as updates throughout code run
+                    ^
+LCFR.c:289:20: warning: unused variable 'networkUnstable' [-Wunused-variable]
+     static uint8_t networkUnstable = 0;
+                    ^
+LCFR.c:287:20: warning: unused variable 'actualLoadMask' [-Wunused-variable]
+     static uint8_t actualLoadMask = 0; // what will be used to display the leds
+                    ^
+LCFR.c:286:20: warning: unused variable 'shedLoadMask' [-Wunused-variable]
+     static uint8_t shedLoadMask = 0; // relay leds
+                    ^
+LCFR.c:285:20: warning: variable 'requestedLoadMask' set but not used [-Wunused-but-set-variable]
+     static uint8_t requestedLoadMask = 0; // user leds
+                    ^
+LCFR.c:283:20: warning: variable 'current_stability_state' set but not used [-Wunused-but-set-variable]
+     static uint8_t current_stability_state;
+                    ^
+LCFR.c: At top level:
+LCFR.c:36:13: warning: 'T_RecordTimeDisplay' declared 'static' but never defined [-Wunused-function]
+ static void T_RecordTimeDisplay (void *pvParameters);
+             ^
+LCFR.c:38:13: warning: 'T_UpdateThreshold' declared 'static' but never defined [-Wunused-function]
+ static void T_UpdateThreshold (void *pvParameters);
+             ^
+Info: Linking LCFR.elf
+nios2-elf-g++  -T'../LCFR_bsp//linker.x' -msys-crt0='../LCFR_bsp//obj/HAL/src/crt0.o' -msys-lib=hal_bsp -L../LCFR_bsp/   -Wl,-Map=LCFR.map   -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o LCFR.elf obj/default/FreeRTOS/croutine.o obj/default/FreeRTOS/event_groups.o obj/default/FreeRTOS/heap.o obj/default/FreeRTOS/list.o obj/default/FreeRTOS/port.o obj/default/FreeRTOS/queue.o obj/default/FreeRTOS/tasks.o obj/default/FreeRTOS/timers.o obj/default/LCFR.o obj/default/FreeRTOS/port_asm.o -lm -msys-lib=m
+nios2-elf-insert LCFR.elf --thread_model hal --cpu_name nios2 --qsys true --simulation_enabled false --id 7 --sidp 0x430f0 --timestamp 1393900972 --stderr_dev jtag_uart --stdin_dev jtag_uart --stdout_dev jtag_uart --sopc_system_name nios2 --quartus_project_dir "C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles" --sopcinfo C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles/software/LCFR_bsp/../../nios2.sopcinfo
+Info: (LCFR.elf) 610 KBytes program size (code + initialized data).
+Info:            130561 KBytes free for stack + heap.
+Info: Creating LCFR.objdump
+nios2-elf-objdump --disassemble --syms --all-header --source LCFR.elf >LCFR.objdump
+[LCFR build complete]
+13:06:19 **** Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+Info: Compiling LCFR.c to obj/default/LCFR.o
+nios2-elf-gcc -xc -MP -MMD -c -I../LCFR_bsp//HAL/inc -I../LCFR_bsp/ -I../LCFR_bsp//drivers/inc  -pipe -D__hal__ -DALT_NO_INSTRUCTION_EMULATION -DALT_SINGLE_THREADED    -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o obj/default/LCFR.o LCFR.c
+LCFR.c: In function 'button_interrupts_function':
+LCFR.c:97:21: warning: variable 'msg' set but not used [-Wunused-but-set-variable]
+     AdcCountMessage msg;
+                     ^
+LCFR.c:96:16: warning: unused variable 'xHigherPriorityTaskWoken' [-Wunused-variable]
+     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+                ^
+LCFR.c: In function 'T_LoadCtrl':
+LCFR.c:292:20: warning: unused variable 'loadManaging' [-Wunused-variable]
+     static uint8_t loadManaging = 0;
+                    ^
+LCFR.c:290:20: warning: unused variable 'prevNetworkUnstable' [-Wunused-variable]
+     static uint8_t prevNetworkUnstable = 0; //init stability, and change as updates throughout code run
+                    ^
+LCFR.c:289:20: warning: unused variable 'networkUnstable' [-Wunused-variable]
+     static uint8_t networkUnstable = 0;
+                    ^
+LCFR.c:287:20: warning: unused variable 'actualLoadMask' [-Wunused-variable]
+     static uint8_t actualLoadMask = 0; // what will be used to display the leds
+                    ^
+LCFR.c:286:20: warning: unused variable 'shedLoadMask' [-Wunused-variable]
+     static uint8_t shedLoadMask = 0; // relay leds
+                    ^
+LCFR.c:285:20: warning: variable 'requestedLoadMask' set but not used [-Wunused-but-set-variable]
+     static uint8_t requestedLoadMask = 0; // user leds
+                    ^
+LCFR.c:283:20: warning: variable 'current_stability_state' set but not used [-Wunused-but-set-variable]
+     static uint8_t current_stability_state;
+                    ^
+LCFR.c: At top level:
+LCFR.c:36:13: warning: 'T_RecordTimeDisplay' declared 'static' but never defined [-Wunused-function]
+ static void T_RecordTimeDisplay (void *pvParameters);
+             ^
+LCFR.c:38:13: warning: 'T_UpdateThreshold' declared 'static' but never defined [-Wunused-function]
+ static void T_UpdateThreshold (void *pvParameters);
+             ^
+Info: Linking LCFR.elf
+nios2-elf-g++  -T'../LCFR_bsp//linker.x' -msys-crt0='../LCFR_bsp//obj/HAL/src/crt0.o' -msys-lib=hal_bsp -L../LCFR_bsp/   -Wl,-Map=LCFR.map   -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o LCFR.elf obj/default/FreeRTOS/croutine.o obj/default/FreeRTOS/event_groups.o obj/default/FreeRTOS/heap.o obj/default/FreeRTOS/list.o obj/default/FreeRTOS/port.o obj/default/FreeRTOS/queue.o obj/default/FreeRTOS/tasks.o obj/default/FreeRTOS/timers.o obj/default/LCFR.o obj/default/FreeRTOS/port_asm.o -lm -msys-lib=m
+nios2-elf-insert LCFR.elf --thread_model hal --cpu_name nios2 --qsys true --simulation_enabled false --id 7 --sidp 0x430f0 --timestamp 1393900972 --stderr_dev jtag_uart --stdin_dev jtag_uart --stdout_dev jtag_uart --sopc_system_name nios2 --quartus_project_dir "C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles" --sopcinfo C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles/software/LCFR_bsp/../../nios2.sopcinfo
+Info: (LCFR.elf) 610 KBytes program size (code + initialized data).
+Info:            130561 KBytes free for stack + heap.
+Info: Creating LCFR.objdump
+nios2-elf-objdump --disassemble --syms --all-header --source LCFR.elf >LCFR.objdump
+[LCFR build complete]
+13:06:21 **** Incremental Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+[LCFR build complete]
+13:07:05 **** Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+[LCFR build complete]
+13:07:07 **** Incremental Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+Info: Compiling LCFR.c to obj/default/LCFR.o
+nios2-elf-gcc -xc -MP -MMD -c -I../LCFR_bsp//HAL/inc -I../LCFR_bsp/ -I../LCFR_bsp//drivers/inc  -pipe -D__hal__ -DALT_NO_INSTRUCTION_EMULATION -DALT_SINGLE_THREADED    -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o obj/default/LCFR.o LCFR.c
+LCFR.c: In function 'button_interrupts_function':
+LCFR.c:97:21: warning: variable 'msg' set but not used [-Wunused-but-set-variable]
+     AdcCountMessage msg;
+                     ^
+LCFR.c:96:16: warning: unused variable 'xHigherPriorityTaskWoken' [-Wunused-variable]
+     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+                ^
+LCFR.c: In function 'T_LoadCtrl':
+LCFR.c:292:20: warning: unused variable 'loadManaging' [-Wunused-variable]
+     static uint8_t loadManaging = 0;
+                    ^
+LCFR.c:290:20: warning: unused variable 'prevNetworkUnstable' [-Wunused-variable]
+     static uint8_t prevNetworkUnstable = 0; //init stability, and change as updates throughout code run
+                    ^
+LCFR.c:289:20: warning: unused variable 'networkUnstable' [-Wunused-variable]
+     static uint8_t networkUnstable = 0;
+                    ^
+LCFR.c:287:20: warning: unused variable 'actualLoadMask' [-Wunused-variable]
+     static uint8_t actualLoadMask = 0; // what will be used to display the leds
+                    ^
+LCFR.c:286:20: warning: unused variable 'shedLoadMask' [-Wunused-variable]
+     static uint8_t shedLoadMask = 0; // relay leds
+                    ^
+LCFR.c:285:20: warning: variable 'requestedLoadMask' set but not used [-Wunused-but-set-variable]
+     static uint8_t requestedLoadMask = 0; // user leds
+                    ^
+LCFR.c:283:20: warning: variable 'current_stability_state' set but not used [-Wunused-but-set-variable]
+     static uint8_t current_stability_state;
+                    ^
+LCFR.c: At top level:
+LCFR.c:36:13: warning: 'T_RecordTimeDisplay' declared 'static' but never defined [-Wunused-function]
+ static void T_RecordTimeDisplay (void *pvParameters);
+             ^
+LCFR.c:38:13: warning: 'T_UpdateThreshold' declared 'static' but never defined [-Wunused-function]
+ static void T_UpdateThreshold (void *pvParameters);
+             ^
+Info: Linking LCFR.elf
+nios2-elf-g++  -T'../LCFR_bsp//linker.x' -msys-crt0='../LCFR_bsp//obj/HAL/src/crt0.o' -msys-lib=hal_bsp -L../LCFR_bsp/   -Wl,-Map=LCFR.map   -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o LCFR.elf obj/default/FreeRTOS/croutine.o obj/default/FreeRTOS/event_groups.o obj/default/FreeRTOS/heap.o obj/default/FreeRTOS/list.o obj/default/FreeRTOS/port.o obj/default/FreeRTOS/queue.o obj/default/FreeRTOS/tasks.o obj/default/FreeRTOS/timers.o obj/default/LCFR.o obj/default/FreeRTOS/port_asm.o -lm -msys-lib=m
+nios2-elf-insert LCFR.elf --thread_model hal --cpu_name nios2 --qsys true --simulation_enabled false --id 7 --sidp 0x430f0 --timestamp 1393900972 --stderr_dev jtag_uart --stdin_dev jtag_uart --stdout_dev jtag_uart --sopc_system_name nios2 --quartus_project_dir "C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles" --sopcinfo C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles/software/LCFR_bsp/../../nios2.sopcinfo
+Info: (LCFR.elf) 610 KBytes program size (code + initialized data).
+Info:            130561 KBytes free for stack + heap.
+Info: Creating LCFR.objdump
+nios2-elf-objdump --disassemble --syms --all-header --source LCFR.elf >LCFR.objdump
+[LCFR build complete]
+13:08:41 **** Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+[LCFR build complete]
+13:08:44 **** Incremental Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+Info: Compiling LCFR.c to obj/default/LCFR.o
+nios2-elf-gcc -xc -MP -MMD -c -I../LCFR_bsp//HAL/inc -I../LCFR_bsp/ -I../LCFR_bsp//drivers/inc  -pipe -D__hal__ -DALT_NO_INSTRUCTION_EMULATION -DALT_SINGLE_THREADED    -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o obj/default/LCFR.o LCFR.c
+LCFR.c: In function 'button_interrupts_function':
+LCFR.c:97:21: warning: variable 'msg' set but not used [-Wunused-but-set-variable]
+     AdcCountMessage msg;
+                     ^
+LCFR.c:96:16: warning: unused variable 'xHigherPriorityTaskWoken' [-Wunused-variable]
+     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+                ^
+LCFR.c: In function 'T_LoadCtrl':
+LCFR.c:292:20: warning: unused variable 'loadManaging' [-Wunused-variable]
+     static uint8_t loadManaging = 0;
+                    ^
+LCFR.c:290:20: warning: unused variable 'prevNetworkUnstable' [-Wunused-variable]
+     static uint8_t prevNetworkUnstable = 0; //init stability, and change as updates throughout code run
+                    ^
+LCFR.c:289:20: warning: unused variable 'networkUnstable' [-Wunused-variable]
+     static uint8_t networkUnstable = 0;
+                    ^
+LCFR.c:287:20: warning: unused variable 'actualLoadMask' [-Wunused-variable]
+     static uint8_t actualLoadMask = 0; // what will be used to display the leds
+                    ^
+LCFR.c:286:20: warning: unused variable 'shedLoadMask' [-Wunused-variable]
+     static uint8_t shedLoadMask = 0; // relay leds
+                    ^
+LCFR.c:285:20: warning: variable 'requestedLoadMask' set but not used [-Wunused-but-set-variable]
+     static uint8_t requestedLoadMask = 0; // user leds
+                    ^
+LCFR.c:283:20: warning: variable 'current_stability_state' set but not used [-Wunused-but-set-variable]
+     static uint8_t current_stability_state;
+                    ^
+LCFR.c: At top level:
+LCFR.c:36:13: warning: 'T_RecordTimeDisplay' declared 'static' but never defined [-Wunused-function]
+ static void T_RecordTimeDisplay (void *pvParameters);
+             ^
+LCFR.c:38:13: warning: 'T_UpdateThreshold' declared 'static' but never defined [-Wunused-function]
+ static void T_UpdateThreshold (void *pvParameters);
+             ^
+Info: Linking LCFR.elf
+nios2-elf-g++  -T'../LCFR_bsp//linker.x' -msys-crt0='../LCFR_bsp//obj/HAL/src/crt0.o' -msys-lib=hal_bsp -L../LCFR_bsp/   -Wl,-Map=LCFR.map   -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o LCFR.elf obj/default/FreeRTOS/croutine.o obj/default/FreeRTOS/event_groups.o obj/default/FreeRTOS/heap.o obj/default/FreeRTOS/list.o obj/default/FreeRTOS/port.o obj/default/FreeRTOS/queue.o obj/default/FreeRTOS/tasks.o obj/default/FreeRTOS/timers.o obj/default/LCFR.o obj/default/FreeRTOS/port_asm.o -lm -msys-lib=m
+nios2-elf-insert LCFR.elf --thread_model hal --cpu_name nios2 --qsys true --simulation_enabled false --id 7 --sidp 0x430f0 --timestamp 1393900972 --stderr_dev jtag_uart --stdin_dev jtag_uart --stdout_dev jtag_uart --sopc_system_name nios2 --quartus_project_dir "C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles" --sopcinfo C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles/software/LCFR_bsp/../../nios2.sopcinfo
+Info: (LCFR.elf) 610 KBytes program size (code + initialized data).
+Info:            130561 KBytes free for stack + heap.
+Info: Creating LCFR.objdump
+nios2-elf-objdump --disassemble --syms --all-header --source LCFR.elf >LCFR.objdump
+[LCFR build complete]
+13:10:43 **** Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+Info: Compiling LCFR.c to obj/default/LCFR.o
+nios2-elf-gcc -xc -MP -MMD -c -I../LCFR_bsp//HAL/inc -I../LCFR_bsp/ -I../LCFR_bsp//drivers/inc  -pipe -D__hal__ -DALT_NO_INSTRUCTION_EMULATION -DALT_SINGLE_THREADED    -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o obj/default/LCFR.o LCFR.c
+LCFR.c: In function 'button_interrupts_function':
+LCFR.c:97:21: warning: variable 'msg' set but not used [-Wunused-but-set-variable]
+     AdcCountMessage msg;
+                     ^
+LCFR.c:96:16: warning: unused variable 'xHigherPriorityTaskWoken' [-Wunused-variable]
+     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+                ^
+LCFR.c: In function 'T_LoadCtrl':
+LCFR.c:292:20: warning: unused variable 'loadManaging' [-Wunused-variable]
+     static uint8_t loadManaging = 0;
+                    ^
+LCFR.c:290:20: warning: unused variable 'prevNetworkUnstable' [-Wunused-variable]
+     static uint8_t prevNetworkUnstable = 0; //init stability, and change as updates throughout code run
+                    ^
+LCFR.c:289:20: warning: unused variable 'networkUnstable' [-Wunused-variable]
+     static uint8_t networkUnstable = 0;
+                    ^
+LCFR.c:287:20: warning: unused variable 'actualLoadMask' [-Wunused-variable]
+     static uint8_t actualLoadMask = 0; // what will be used to display the leds
+                    ^
+LCFR.c:286:20: warning: unused variable 'shedLoadMask' [-Wunused-variable]
+     static uint8_t shedLoadMask = 0; // relay leds
+                    ^
+LCFR.c:285:20: warning: variable 'requestedLoadMask' set but not used [-Wunused-but-set-variable]
+     static uint8_t requestedLoadMask = 0; // user leds
+                    ^
+LCFR.c:283:20: warning: variable 'current_stability_state' set but not used [-Wunused-but-set-variable]
+     static uint8_t current_stability_state;
+                    ^
+LCFR.c: At top level:
+LCFR.c:36:13: warning: 'T_RecordTimeDisplay' declared 'static' but never defined [-Wunused-function]
+ static void T_RecordTimeDisplay (void *pvParameters);
+             ^
+LCFR.c:38:13: warning: 'T_UpdateThreshold' declared 'static' but never defined [-Wunused-function]
+ static void T_UpdateThreshold (void *pvParameters);
+             ^
+Info: Linking LCFR.elf
+nios2-elf-g++  -T'../LCFR_bsp//linker.x' -msys-crt0='../LCFR_bsp//obj/HAL/src/crt0.o' -msys-lib=hal_bsp -L../LCFR_bsp/   -Wl,-Map=LCFR.map   -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o LCFR.elf obj/default/FreeRTOS/croutine.o obj/default/FreeRTOS/event_groups.o obj/default/FreeRTOS/heap.o obj/default/FreeRTOS/list.o obj/default/FreeRTOS/port.o obj/default/FreeRTOS/queue.o obj/default/FreeRTOS/tasks.o obj/default/FreeRTOS/timers.o obj/default/LCFR.o obj/default/FreeRTOS/port_asm.o -lm -msys-lib=m
+nios2-elf-insert LCFR.elf --thread_model hal --cpu_name nios2 --qsys true --simulation_enabled false --id 7 --sidp 0x430f0 --timestamp 1393900972 --stderr_dev jtag_uart --stdin_dev jtag_uart --stdout_dev jtag_uart --sopc_system_name nios2 --quartus_project_dir "C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles" --sopcinfo C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles/software/LCFR_bsp/../../nios2.sopcinfo
+Info: (LCFR.elf) 610 KBytes program size (code + initialized data).
+Info:            130561 KBytes free for stack + heap.
+Info: Creating LCFR.objdump
+nios2-elf-objdump --disassemble --syms --all-header --source LCFR.elf >LCFR.objdump
+[LCFR build complete]
+13:10:45 **** Incremental Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+[LCFR build complete]
+13:16:15 **** Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+Info: Compiling LCFR.c to obj/default/LCFR.o
+nios2-elf-gcc -xc -MP -MMD -c -I../LCFR_bsp//HAL/inc -I../LCFR_bsp/ -I../LCFR_bsp//drivers/inc  -pipe -D__hal__ -DALT_NO_INSTRUCTION_EMULATION -DALT_SINGLE_THREADED    -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o obj/default/LCFR.o LCFR.c
+LCFR.c: In function 'button_interrupts_function':
+LCFR.c:97:21: warning: variable 'msg' set but not used [-Wunused-but-set-variable]
+     AdcCountMessage msg;
+                     ^
+LCFR.c:96:16: warning: unused variable 'xHigherPriorityTaskWoken' [-Wunused-variable]
+     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+                ^
+LCFR.c: In function 'T_LoadCtrl':
+LCFR.c:292:20: warning: unused variable 'loadManaging' [-Wunused-variable]
+     static uint8_t loadManaging = 0;
+                    ^
+LCFR.c:290:20: warning: unused variable 'prevNetworkUnstable' [-Wunused-variable]
+     static uint8_t prevNetworkUnstable = 0; //init stability, and change as updates throughout code run
+                    ^
+LCFR.c:289:20: warning: unused variable 'networkUnstable' [-Wunused-variable]
+     static uint8_t networkUnstable = 0;
+                    ^
+LCFR.c:287:20: warning: unused variable 'actualLoadMask' [-Wunused-variable]
+     static uint8_t actualLoadMask = 0; // what will be used to display the leds
+                    ^
+LCFR.c:286:20: warning: unused variable 'shedLoadMask' [-Wunused-variable]
+     static uint8_t shedLoadMask = 0; // relay leds
+                    ^
+LCFR.c:285:20: warning: variable 'requestedLoadMask' set but not used [-Wunused-but-set-variable]
+     static uint8_t requestedLoadMask = 0; // user leds
+                    ^
+LCFR.c:283:20: warning: variable 'current_stability_state' set but not used [-Wunused-but-set-variable]
+     static uint8_t current_stability_state;
+                    ^
+LCFR.c: At top level:
+LCFR.c:36:13: warning: 'T_RecordTimeDisplay' declared 'static' but never defined [-Wunused-function]
+ static void T_RecordTimeDisplay (void *pvParameters);
+             ^
+LCFR.c:38:13: warning: 'T_UpdateThreshold' declared 'static' but never defined [-Wunused-function]
+ static void T_UpdateThreshold (void *pvParameters);
+             ^
+Info: Linking LCFR.elf
+nios2-elf-g++  -T'../LCFR_bsp//linker.x' -msys-crt0='../LCFR_bsp//obj/HAL/src/crt0.o' -msys-lib=hal_bsp -L../LCFR_bsp/   -Wl,-Map=LCFR.map   -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o LCFR.elf obj/default/FreeRTOS/croutine.o obj/default/FreeRTOS/event_groups.o obj/default/FreeRTOS/heap.o obj/default/FreeRTOS/list.o obj/default/FreeRTOS/port.o obj/default/FreeRTOS/queue.o obj/default/FreeRTOS/tasks.o obj/default/FreeRTOS/timers.o obj/default/LCFR.o obj/default/FreeRTOS/port_asm.o -lm -msys-lib=m
+nios2-elf-insert LCFR.elf --thread_model hal --cpu_name nios2 --qsys true --simulation_enabled false --id 7 --sidp 0x430f0 --timestamp 1393900972 --stderr_dev jtag_uart --stdin_dev jtag_uart --stdout_dev jtag_uart --sopc_system_name nios2 --quartus_project_dir "C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles" --sopcinfo C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles/software/LCFR_bsp/../../nios2.sopcinfo
+Info: (LCFR.elf) 610 KBytes program size (code + initialized data).
+Info:            130561 KBytes free for stack + heap.
+Info: Creating LCFR.objdump
+nios2-elf-objdump --disassemble --syms --all-header --source LCFR.elf >LCFR.objdump
+[LCFR build complete]
+13:16:17 **** Incremental Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+[LCFR build complete]
+13:16:41 **** Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+Info: Compiling LCFR.c to obj/default/LCFR.o
+nios2-elf-gcc -xc -MP -MMD -c -I../LCFR_bsp//HAL/inc -I../LCFR_bsp/ -I../LCFR_bsp//drivers/inc  -pipe -D__hal__ -DALT_NO_INSTRUCTION_EMULATION -DALT_SINGLE_THREADED    -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o obj/default/LCFR.o LCFR.c
+LCFR.c: In function 'button_interrupts_function':
+LCFR.c:97:21: warning: variable 'msg' set but not used [-Wunused-but-set-variable]
+     AdcCountMessage msg;
+                     ^
+LCFR.c:96:16: warning: unused variable 'xHigherPriorityTaskWoken' [-Wunused-variable]
+     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+                ^
+LCFR.c: In function 'T_LoadCtrl':
+LCFR.c:292:20: warning: unused variable 'loadManaging' [-Wunused-variable]
+     static uint8_t loadManaging = 0;
+                    ^
+LCFR.c:290:20: warning: unused variable 'prevNetworkUnstable' [-Wunused-variable]
+     static uint8_t prevNetworkUnstable = 0; //init stability, and change as updates throughout code run
+                    ^
+LCFR.c:289:20: warning: unused variable 'networkUnstable' [-Wunused-variable]
+     static uint8_t networkUnstable = 0;
+                    ^
+LCFR.c:287:20: warning: unused variable 'actualLoadMask' [-Wunused-variable]
+     static uint8_t actualLoadMask = 0; // what will be used to display the leds
+                    ^
+LCFR.c:286:20: warning: unused variable 'shedLoadMask' [-Wunused-variable]
+     static uint8_t shedLoadMask = 0; // relay leds
+                    ^
+LCFR.c:285:20: warning: variable 'requestedLoadMask' set but not used [-Wunused-but-set-variable]
+     static uint8_t requestedLoadMask = 0; // user leds
+                    ^
+LCFR.c:283:20: warning: variable 'current_stability_state' set but not used [-Wunused-but-set-variable]
+     static uint8_t current_stability_state;
+                    ^
+LCFR.c: At top level:
+LCFR.c:36:13: warning: 'T_RecordTimeDisplay' declared 'static' but never defined [-Wunused-function]
+ static void T_RecordTimeDisplay (void *pvParameters);
+             ^
+LCFR.c:38:13: warning: 'T_UpdateThreshold' declared 'static' but never defined [-Wunused-function]
+ static void T_UpdateThreshold (void *pvParameters);
+             ^
+Info: Linking LCFR.elf
+nios2-elf-g++  -T'../LCFR_bsp//linker.x' -msys-crt0='../LCFR_bsp//obj/HAL/src/crt0.o' -msys-lib=hal_bsp -L../LCFR_bsp/   -Wl,-Map=LCFR.map   -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o LCFR.elf obj/default/FreeRTOS/croutine.o obj/default/FreeRTOS/event_groups.o obj/default/FreeRTOS/heap.o obj/default/FreeRTOS/list.o obj/default/FreeRTOS/port.o obj/default/FreeRTOS/queue.o obj/default/FreeRTOS/tasks.o obj/default/FreeRTOS/timers.o obj/default/LCFR.o obj/default/FreeRTOS/port_asm.o -lm -msys-lib=m
+nios2-elf-insert LCFR.elf --thread_model hal --cpu_name nios2 --qsys true --simulation_enabled false --id 7 --sidp 0x430f0 --timestamp 1393900972 --stderr_dev jtag_uart --stdin_dev jtag_uart --stdout_dev jtag_uart --sopc_system_name nios2 --quartus_project_dir "C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles" --sopcinfo C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles/software/LCFR_bsp/../../nios2.sopcinfo
+Info: (LCFR.elf) 610 KBytes program size (code + initialized data).
+Info:            130561 KBytes free for stack + heap.
+Info: Creating LCFR.objdump
+nios2-elf-objdump --disassemble --syms --all-header --source LCFR.elf >LCFR.objdump
+[LCFR build complete]
+13:16:44 **** Incremental Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+[LCFR build complete]
