@@ -1,0 +1,12 @@
+
+int main(void)
+{
+    bsp_init();              // clock, gpio, uart...
+    rtos_objects_init();     // queues, mutex
+
+    app_tasks_init();        // create tasks
+
+    vTaskStartScheduler();
+
+    while (1);
+}

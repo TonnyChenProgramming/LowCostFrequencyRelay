@@ -1,4 +1,8 @@
+<<<<<<< Updated upstream
 12:30:20 **** Build of configuration Nios II for project LCFR ****
+=======
+22:06:10 **** Incremental Build of configuration Nios II for project LCFR ****
+>>>>>>> Stashed changes
 make all 
 Info: Building ../LCFR_bsp/
 C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
@@ -6,6 +10,7 @@ C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-dir
 Info: Compiling LCFR.c to obj/default/LCFR.o
 nios2-elf-gcc -xc -MP -MMD -c -I../LCFR_bsp//HAL/inc -I../LCFR_bsp/ -I../LCFR_bsp//drivers/inc  -pipe -D__hal__ -DALT_NO_INSTRUCTION_EMULATION -DALT_SINGLE_THREADED    -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o obj/default/LCFR.o LCFR.c
 LCFR.c: In function 'button_interrupts_function':
+<<<<<<< Updated upstream
 LCFR.c:95:21: warning: variable 'msg' set but not used [-Wunused-but-set-variable]
      AdcCountMessage msg;
                      ^
@@ -24,17 +29,60 @@ LCFR.c:35:13: warning: 'T_RecordTimeDisplay' declared 'static' but never defined
  static void T_RecordTimeDisplay (void *pvParameters);
              ^
 LCFR.c:37:13: warning: 'T_UpdateThreshold' declared 'static' but never defined [-Wunused-function]
+=======
+LCFR.c:115:21: warning: variable 'msg' set but not used [-Wunused-but-set-variable]
+     AdcCountMessage msg;
+                     ^
+LCFR.c:114:16: warning: unused variable 'xHigherPriorityTaskWoken' [-Wunused-variable]
+     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+                ^
+LCFR.c: In function 'ISR_Init':
+LCFR.c:205:49: warning: passing argument 3 of 'alt_irq_register' from incompatible pointer type [-Wincompatible-pointer-types]
+     alt_irq_register(FREQUENCY_ANALYSER_IRQ, 0, freq_relay_function);
+                                                 ^
+In file included from ../LCFR_bsp//HAL/inc/sys/alt_irq.h:218:0,
+                 from LCFR.c:8:
+../LCFR_bsp//HAL/inc/priv/alt_legacy_irq.h:61:12: note: expected 'alt_isr_func {aka void (*)(void *, long unsigned int)}' but argument is of type 'void (*)(void *)'
+ extern int alt_irq_register (alt_u32 id, 
+            ^
+LCFR.c: At top level:
+LCFR.c:40:13: warning: 'T_RecordTimeDisplay' declared 'static' but never defined [-Wunused-function]
+ static void T_RecordTimeDisplay (void *pvParameters);
+             ^
+LCFR.c:41:13: warning: 'T_UpdateThreshold' declared 'static' but never defined [-Wunused-function]
+>>>>>>> Stashed changes
  static void T_UpdateThreshold (void *pvParameters);
              ^
 Info: Linking LCFR.elf
 nios2-elf-g++  -T'../LCFR_bsp//linker.x' -msys-crt0='../LCFR_bsp//obj/HAL/src/crt0.o' -msys-lib=hal_bsp -L../LCFR_bsp/   -Wl,-Map=LCFR.map   -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o LCFR.elf obj/default/FreeRTOS/croutine.o obj/default/FreeRTOS/event_groups.o obj/default/FreeRTOS/heap.o obj/default/FreeRTOS/list.o obj/default/FreeRTOS/port.o obj/default/FreeRTOS/queue.o obj/default/FreeRTOS/tasks.o obj/default/FreeRTOS/timers.o obj/default/LCFR.o obj/default/FreeRTOS/port_asm.o -lm -msys-lib=m
+<<<<<<< Updated upstream
 nios2-elf-insert LCFR.elf --thread_model hal --cpu_name nios2 --qsys true --simulation_enabled false --id 7 --sidp 0x430f0 --timestamp 1393900972 --stderr_dev jtag_uart --stdin_dev jtag_uart --stdout_dev jtag_uart --sopc_system_name nios2 --quartus_project_dir "C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles" --sopcinfo C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles/software/LCFR_bsp/../../nios2.sopcinfo
 Info: (LCFR.elf) 610 KBytes program size (code + initialized data).
+=======
+nios2-elf-insert LCFR.elf --thread_model hal --cpu_name nios2 --qsys true --simulation_enabled false --id 7 --sidp 0x430f0 --timestamp 1393900972 --stderr_dev jtag_uart --stdin_dev jtag_uart --stdout_dev jtag_uart --sopc_system_name nios2 --quartus_project_dir "C:/intelFPGA_lite/18.1/701/LowCostFrequencyRelay/Main/Projectfiles" --sopcinfo C:/intelFPGA_lite/18.1/701/LowCostFrequencyRelay/Main/Projectfiles/software/LCFR_bsp/../../nios2.sopcinfo
+Info: (LCFR.elf) 612 KBytes program size (code + initialized data).
+>>>>>>> Stashed changes
 Info:            130561 KBytes free for stack + heap.
 Info: Creating LCFR.objdump
 nios2-elf-objdump --disassemble --syms --all-header --source LCFR.elf >LCFR.objdump
 [LCFR build complete]
+<<<<<<< Updated upstream
 12:34:42 **** Build of configuration Nios II for project LCFR ****
+=======
+22:06:16 **** Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+[LCFR build complete]
+22:06:18 **** Incremental Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+[LCFR build complete]
+22:09:16 **** Build of configuration Nios II for project LCFR ****
+>>>>>>> Stashed changes
 make all 
 Info: Building ../LCFR_bsp/
 C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
@@ -42,6 +90,7 @@ C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-dir
 Info: Compiling LCFR.c to obj/default/LCFR.o
 nios2-elf-gcc -xc -MP -MMD -c -I../LCFR_bsp//HAL/inc -I../LCFR_bsp/ -I../LCFR_bsp//drivers/inc  -pipe -D__hal__ -DALT_NO_INSTRUCTION_EMULATION -DALT_SINGLE_THREADED    -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o obj/default/LCFR.o LCFR.c
 LCFR.c: In function 'button_interrupts_function':
+<<<<<<< Updated upstream
 LCFR.c:95:21: warning: variable 'msg' set but not used [-Wunused-but-set-variable]
      AdcCountMessage msg;
                      ^
@@ -153,23 +202,58 @@ LCFR.c:35:13: warning: 'T_RecordTimeDisplay' declared 'static' but never defined
  static void T_RecordTimeDisplay (void *pvParameters);
              ^
 LCFR.c:37:13: warning: 'T_UpdateThreshold' declared 'static' but never defined [-Wunused-function]
+=======
+LCFR.c:115:21: warning: variable 'msg' set but not used [-Wunused-but-set-variable]
+     AdcCountMessage msg;
+                     ^
+LCFR.c:114:16: warning: unused variable 'xHigherPriorityTaskWoken' [-Wunused-variable]
+     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+                ^
+LCFR.c: In function 'ISR_Init':
+LCFR.c:205:49: warning: passing argument 3 of 'alt_irq_register' from incompatible pointer type [-Wincompatible-pointer-types]
+     alt_irq_register(FREQUENCY_ANALYSER_IRQ, 0, freq_relay_function);
+                                                 ^
+In file included from ../LCFR_bsp//HAL/inc/sys/alt_irq.h:218:0,
+                 from LCFR.c:8:
+../LCFR_bsp//HAL/inc/priv/alt_legacy_irq.h:61:12: note: expected 'alt_isr_func {aka void (*)(void *, long unsigned int)}' but argument is of type 'void (*)(void *)'
+ extern int alt_irq_register (alt_u32 id, 
+            ^
+LCFR.c: At top level:
+LCFR.c:40:13: warning: 'T_RecordTimeDisplay' declared 'static' but never defined [-Wunused-function]
+ static void T_RecordTimeDisplay (void *pvParameters);
+             ^
+LCFR.c:41:13: warning: 'T_UpdateThreshold' declared 'static' but never defined [-Wunused-function]
+>>>>>>> Stashed changes
  static void T_UpdateThreshold (void *pvParameters);
              ^
 Info: Linking LCFR.elf
 nios2-elf-g++  -T'../LCFR_bsp//linker.x' -msys-crt0='../LCFR_bsp//obj/HAL/src/crt0.o' -msys-lib=hal_bsp -L../LCFR_bsp/   -Wl,-Map=LCFR.map   -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o LCFR.elf obj/default/FreeRTOS/croutine.o obj/default/FreeRTOS/event_groups.o obj/default/FreeRTOS/heap.o obj/default/FreeRTOS/list.o obj/default/FreeRTOS/port.o obj/default/FreeRTOS/queue.o obj/default/FreeRTOS/tasks.o obj/default/FreeRTOS/timers.o obj/default/LCFR.o obj/default/FreeRTOS/port_asm.o -lm -msys-lib=m
+<<<<<<< Updated upstream
 nios2-elf-insert LCFR.elf --thread_model hal --cpu_name nios2 --qsys true --simulation_enabled false --id 7 --sidp 0x430f0 --timestamp 1393900972 --stderr_dev jtag_uart --stdin_dev jtag_uart --stdout_dev jtag_uart --sopc_system_name nios2 --quartus_project_dir "C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles" --sopcinfo C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles/software/LCFR_bsp/../../nios2.sopcinfo
 Info: (LCFR.elf) 610 KBytes program size (code + initialized data).
+=======
+nios2-elf-insert LCFR.elf --thread_model hal --cpu_name nios2 --qsys true --simulation_enabled false --id 7 --sidp 0x430f0 --timestamp 1393900972 --stderr_dev jtag_uart --stdin_dev jtag_uart --stdout_dev jtag_uart --sopc_system_name nios2 --quartus_project_dir "C:/intelFPGA_lite/18.1/701/LowCostFrequencyRelay/Main/Projectfiles" --sopcinfo C:/intelFPGA_lite/18.1/701/LowCostFrequencyRelay/Main/Projectfiles/software/LCFR_bsp/../../nios2.sopcinfo
+Info: (LCFR.elf) 612 KBytes program size (code + initialized data).
+>>>>>>> Stashed changes
 Info:            130561 KBytes free for stack + heap.
 Info: Creating LCFR.objdump
 nios2-elf-objdump --disassemble --syms --all-header --source LCFR.elf >LCFR.objdump
 [LCFR build complete]
+<<<<<<< Updated upstream
 12:35:43 **** Incremental Build of configuration Nios II for project LCFR ****
+=======
+22:09:19 **** Incremental Build of configuration Nios II for project LCFR ****
+>>>>>>> Stashed changes
 make all 
 Info: Building ../LCFR_bsp/
 C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
 [BSP build complete]
 [LCFR build complete]
+<<<<<<< Updated upstream
 12:37:25 **** Build of configuration Nios II for project LCFR ****
+=======
+22:12:08 **** Incremental Build of configuration Nios II for project LCFR ****
+>>>>>>> Stashed changes
 make all 
 Info: Building ../LCFR_bsp/
 C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
@@ -177,6 +261,7 @@ C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-dir
 Info: Compiling LCFR.c to obj/default/LCFR.o
 nios2-elf-gcc -xc -MP -MMD -c -I../LCFR_bsp//HAL/inc -I../LCFR_bsp/ -I../LCFR_bsp//drivers/inc  -pipe -D__hal__ -DALT_NO_INSTRUCTION_EMULATION -DALT_SINGLE_THREADED    -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o obj/default/LCFR.o LCFR.c
 LCFR.c: In function 'button_interrupts_function':
+<<<<<<< Updated upstream
 LCFR.c:95:21: warning: variable 'msg' set but not used [-Wunused-but-set-variable]
      AdcCountMessage msg;
                      ^
@@ -204,23 +289,64 @@ LCFR.c:35:13: warning: 'T_RecordTimeDisplay' declared 'static' but never defined
  static void T_RecordTimeDisplay (void *pvParameters);
              ^
 LCFR.c:37:13: warning: 'T_UpdateThreshold' declared 'static' but never defined [-Wunused-function]
+=======
+LCFR.c:115:21: warning: variable 'msg' set but not used [-Wunused-but-set-variable]
+     AdcCountMessage msg;
+                     ^
+LCFR.c:114:16: warning: unused variable 'xHigherPriorityTaskWoken' [-Wunused-variable]
+     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+                ^
+LCFR.c: In function 'ISR_Init':
+LCFR.c:205:49: warning: passing argument 3 of 'alt_irq_register' from incompatible pointer type [-Wincompatible-pointer-types]
+     alt_irq_register(FREQUENCY_ANALYSER_IRQ, 0, freq_relay_function);
+                                                 ^
+In file included from ../LCFR_bsp//HAL/inc/sys/alt_irq.h:218:0,
+                 from LCFR.c:8:
+../LCFR_bsp//HAL/inc/priv/alt_legacy_irq.h:61:12: note: expected 'alt_isr_func {aka void (*)(void *, long unsigned int)}' but argument is of type 'void (*)(void *)'
+ extern int alt_irq_register (alt_u32 id, 
+            ^
+LCFR.c: At top level:
+LCFR.c:40:13: warning: 'T_RecordTimeDisplay' declared 'static' but never defined [-Wunused-function]
+ static void T_RecordTimeDisplay (void *pvParameters);
+             ^
+LCFR.c:41:13: warning: 'T_UpdateThreshold' declared 'static' but never defined [-Wunused-function]
+>>>>>>> Stashed changes
  static void T_UpdateThreshold (void *pvParameters);
              ^
 Info: Linking LCFR.elf
 nios2-elf-g++  -T'../LCFR_bsp//linker.x' -msys-crt0='../LCFR_bsp//obj/HAL/src/crt0.o' -msys-lib=hal_bsp -L../LCFR_bsp/   -Wl,-Map=LCFR.map   -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o LCFR.elf obj/default/FreeRTOS/croutine.o obj/default/FreeRTOS/event_groups.o obj/default/FreeRTOS/heap.o obj/default/FreeRTOS/list.o obj/default/FreeRTOS/port.o obj/default/FreeRTOS/queue.o obj/default/FreeRTOS/tasks.o obj/default/FreeRTOS/timers.o obj/default/LCFR.o obj/default/FreeRTOS/port_asm.o -lm -msys-lib=m
+<<<<<<< Updated upstream
 nios2-elf-insert LCFR.elf --thread_model hal --cpu_name nios2 --qsys true --simulation_enabled false --id 7 --sidp 0x430f0 --timestamp 1393900972 --stderr_dev jtag_uart --stdin_dev jtag_uart --stdout_dev jtag_uart --sopc_system_name nios2 --quartus_project_dir "C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles" --sopcinfo C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles/software/LCFR_bsp/../../nios2.sopcinfo
 Info: (LCFR.elf) 610 KBytes program size (code + initialized data).
+=======
+nios2-elf-insert LCFR.elf --thread_model hal --cpu_name nios2 --qsys true --simulation_enabled false --id 7 --sidp 0x430f0 --timestamp 1393900972 --stderr_dev jtag_uart --stdin_dev jtag_uart --stdout_dev jtag_uart --sopc_system_name nios2 --quartus_project_dir "C:/intelFPGA_lite/18.1/701/LowCostFrequencyRelay/Main/Projectfiles" --sopcinfo C:/intelFPGA_lite/18.1/701/LowCostFrequencyRelay/Main/Projectfiles/software/LCFR_bsp/../../nios2.sopcinfo
+Info: (LCFR.elf) 612 KBytes program size (code + initialized data).
+>>>>>>> Stashed changes
 Info:            130561 KBytes free for stack + heap.
 Info: Creating LCFR.objdump
 nios2-elf-objdump --disassemble --syms --all-header --source LCFR.elf >LCFR.objdump
 [LCFR build complete]
+<<<<<<< Updated upstream
 12:37:27 **** Incremental Build of configuration Nios II for project LCFR ****
+=======
+22:12:18 **** Build of configuration Nios II for project LCFR ****
+>>>>>>> Stashed changes
 make all 
 Info: Building ../LCFR_bsp/
 C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
 [BSP build complete]
 [LCFR build complete]
+<<<<<<< Updated upstream
 12:38:19 **** Build of configuration Nios II for project LCFR ****
+=======
+22:12:20 **** Incremental Build of configuration Nios II for project LCFR ****
+make all 
+Info: Building ../LCFR_bsp/
+C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+[BSP build complete]
+[LCFR build complete]
+22:14:27 **** Build of configuration Nios II for project LCFR ****
+>>>>>>> Stashed changes
 make all 
 Info: Building ../LCFR_bsp/
 C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
@@ -228,6 +354,7 @@ C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-dir
 Info: Compiling LCFR.c to obj/default/LCFR.o
 nios2-elf-gcc -xc -MP -MMD -c -I../LCFR_bsp//HAL/inc -I../LCFR_bsp/ -I../LCFR_bsp//drivers/inc  -pipe -D__hal__ -DALT_NO_INSTRUCTION_EMULATION -DALT_SINGLE_THREADED    -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o obj/default/LCFR.o LCFR.c
 LCFR.c: In function 'button_interrupts_function':
+<<<<<<< Updated upstream
 LCFR.c:95:21: warning: variable 'msg' set but not used [-Wunused-but-set-variable]
      AdcCountMessage msg;
                      ^
@@ -255,23 +382,58 @@ LCFR.c:35:13: warning: 'T_RecordTimeDisplay' declared 'static' but never defined
  static void T_RecordTimeDisplay (void *pvParameters);
              ^
 LCFR.c:37:13: warning: 'T_UpdateThreshold' declared 'static' but never defined [-Wunused-function]
+=======
+LCFR.c:115:21: warning: variable 'msg' set but not used [-Wunused-but-set-variable]
+     AdcCountMessage msg;
+                     ^
+LCFR.c:114:16: warning: unused variable 'xHigherPriorityTaskWoken' [-Wunused-variable]
+     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+                ^
+LCFR.c: In function 'ISR_Init':
+LCFR.c:205:49: warning: passing argument 3 of 'alt_irq_register' from incompatible pointer type [-Wincompatible-pointer-types]
+     alt_irq_register(FREQUENCY_ANALYSER_IRQ, 0, freq_relay_function);
+                                                 ^
+In file included from ../LCFR_bsp//HAL/inc/sys/alt_irq.h:218:0,
+                 from LCFR.c:8:
+../LCFR_bsp//HAL/inc/priv/alt_legacy_irq.h:61:12: note: expected 'alt_isr_func {aka void (*)(void *, long unsigned int)}' but argument is of type 'void (*)(void *)'
+ extern int alt_irq_register (alt_u32 id, 
+            ^
+LCFR.c: At top level:
+LCFR.c:40:13: warning: 'T_RecordTimeDisplay' declared 'static' but never defined [-Wunused-function]
+ static void T_RecordTimeDisplay (void *pvParameters);
+             ^
+LCFR.c:41:13: warning: 'T_UpdateThreshold' declared 'static' but never defined [-Wunused-function]
+>>>>>>> Stashed changes
  static void T_UpdateThreshold (void *pvParameters);
              ^
 Info: Linking LCFR.elf
 nios2-elf-g++  -T'../LCFR_bsp//linker.x' -msys-crt0='../LCFR_bsp//obj/HAL/src/crt0.o' -msys-lib=hal_bsp -L../LCFR_bsp/   -Wl,-Map=LCFR.map   -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o LCFR.elf obj/default/FreeRTOS/croutine.o obj/default/FreeRTOS/event_groups.o obj/default/FreeRTOS/heap.o obj/default/FreeRTOS/list.o obj/default/FreeRTOS/port.o obj/default/FreeRTOS/queue.o obj/default/FreeRTOS/tasks.o obj/default/FreeRTOS/timers.o obj/default/LCFR.o obj/default/FreeRTOS/port_asm.o -lm -msys-lib=m
+<<<<<<< Updated upstream
 nios2-elf-insert LCFR.elf --thread_model hal --cpu_name nios2 --qsys true --simulation_enabled false --id 7 --sidp 0x430f0 --timestamp 1393900972 --stderr_dev jtag_uart --stdin_dev jtag_uart --stdout_dev jtag_uart --sopc_system_name nios2 --quartus_project_dir "C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles" --sopcinfo C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles/software/LCFR_bsp/../../nios2.sopcinfo
 Info: (LCFR.elf) 610 KBytes program size (code + initialized data).
+=======
+nios2-elf-insert LCFR.elf --thread_model hal --cpu_name nios2 --qsys true --simulation_enabled false --id 7 --sidp 0x430f0 --timestamp 1393900972 --stderr_dev jtag_uart --stdin_dev jtag_uart --stdout_dev jtag_uart --sopc_system_name nios2 --quartus_project_dir "C:/intelFPGA_lite/18.1/701/LowCostFrequencyRelay/Main/Projectfiles" --sopcinfo C:/intelFPGA_lite/18.1/701/LowCostFrequencyRelay/Main/Projectfiles/software/LCFR_bsp/../../nios2.sopcinfo
+Info: (LCFR.elf) 612 KBytes program size (code + initialized data).
+>>>>>>> Stashed changes
 Info:            130561 KBytes free for stack + heap.
 Info: Creating LCFR.objdump
 nios2-elf-objdump --disassemble --syms --all-header --source LCFR.elf >LCFR.objdump
 [LCFR build complete]
+<<<<<<< Updated upstream
 12:38:21 **** Incremental Build of configuration Nios II for project LCFR ****
+=======
+22:14:30 **** Incremental Build of configuration Nios II for project LCFR ****
+>>>>>>> Stashed changes
 make all 
 Info: Building ../LCFR_bsp/
 C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
 [BSP build complete]
 [LCFR build complete]
+<<<<<<< Updated upstream
 12:39:14 **** Build of configuration Nios II for project LCFR ****
+=======
+22:18:41 **** Build of configuration Nios II for project LCFR ****
+>>>>>>> Stashed changes
 make all 
 Info: Building ../LCFR_bsp/
 C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
@@ -279,6 +441,7 @@ C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-dir
 Info: Compiling LCFR.c to obj/default/LCFR.o
 nios2-elf-gcc -xc -MP -MMD -c -I../LCFR_bsp//HAL/inc -I../LCFR_bsp/ -I../LCFR_bsp//drivers/inc  -pipe -D__hal__ -DALT_NO_INSTRUCTION_EMULATION -DALT_SINGLE_THREADED    -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o obj/default/LCFR.o LCFR.c
 LCFR.c: In function 'button_interrupts_function':
+<<<<<<< Updated upstream
 LCFR.c:95:21: warning: variable 'msg' set but not used [-Wunused-but-set-variable]
      AdcCountMessage msg;
                      ^
@@ -309,23 +472,58 @@ LCFR.c:35:13: warning: 'T_RecordTimeDisplay' declared 'static' but never defined
  static void T_RecordTimeDisplay (void *pvParameters);
              ^
 LCFR.c:37:13: warning: 'T_UpdateThreshold' declared 'static' but never defined [-Wunused-function]
+=======
+LCFR.c:115:21: warning: variable 'msg' set but not used [-Wunused-but-set-variable]
+     AdcCountMessage msg;
+                     ^
+LCFR.c:114:16: warning: unused variable 'xHigherPriorityTaskWoken' [-Wunused-variable]
+     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+                ^
+LCFR.c: In function 'ISR_Init':
+LCFR.c:205:49: warning: passing argument 3 of 'alt_irq_register' from incompatible pointer type [-Wincompatible-pointer-types]
+     alt_irq_register(FREQUENCY_ANALYSER_IRQ, 0, freq_relay_function);
+                                                 ^
+In file included from ../LCFR_bsp//HAL/inc/sys/alt_irq.h:218:0,
+                 from LCFR.c:8:
+../LCFR_bsp//HAL/inc/priv/alt_legacy_irq.h:61:12: note: expected 'alt_isr_func {aka void (*)(void *, long unsigned int)}' but argument is of type 'void (*)(void *)'
+ extern int alt_irq_register (alt_u32 id, 
+            ^
+LCFR.c: At top level:
+LCFR.c:40:13: warning: 'T_RecordTimeDisplay' declared 'static' but never defined [-Wunused-function]
+ static void T_RecordTimeDisplay (void *pvParameters);
+             ^
+LCFR.c:41:13: warning: 'T_UpdateThreshold' declared 'static' but never defined [-Wunused-function]
+>>>>>>> Stashed changes
  static void T_UpdateThreshold (void *pvParameters);
              ^
 Info: Linking LCFR.elf
 nios2-elf-g++  -T'../LCFR_bsp//linker.x' -msys-crt0='../LCFR_bsp//obj/HAL/src/crt0.o' -msys-lib=hal_bsp -L../LCFR_bsp/   -Wl,-Map=LCFR.map   -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o LCFR.elf obj/default/FreeRTOS/croutine.o obj/default/FreeRTOS/event_groups.o obj/default/FreeRTOS/heap.o obj/default/FreeRTOS/list.o obj/default/FreeRTOS/port.o obj/default/FreeRTOS/queue.o obj/default/FreeRTOS/tasks.o obj/default/FreeRTOS/timers.o obj/default/LCFR.o obj/default/FreeRTOS/port_asm.o -lm -msys-lib=m
+<<<<<<< Updated upstream
 nios2-elf-insert LCFR.elf --thread_model hal --cpu_name nios2 --qsys true --simulation_enabled false --id 7 --sidp 0x430f0 --timestamp 1393900972 --stderr_dev jtag_uart --stdin_dev jtag_uart --stdout_dev jtag_uart --sopc_system_name nios2 --quartus_project_dir "C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles" --sopcinfo C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles/software/LCFR_bsp/../../nios2.sopcinfo
 Info: (LCFR.elf) 610 KBytes program size (code + initialized data).
+=======
+nios2-elf-insert LCFR.elf --thread_model hal --cpu_name nios2 --qsys true --simulation_enabled false --id 7 --sidp 0x430f0 --timestamp 1393900972 --stderr_dev jtag_uart --stdin_dev jtag_uart --stdout_dev jtag_uart --sopc_system_name nios2 --quartus_project_dir "C:/intelFPGA_lite/18.1/701/LowCostFrequencyRelay/Main/Projectfiles" --sopcinfo C:/intelFPGA_lite/18.1/701/LowCostFrequencyRelay/Main/Projectfiles/software/LCFR_bsp/../../nios2.sopcinfo
+Info: (LCFR.elf) 612 KBytes program size (code + initialized data).
+>>>>>>> Stashed changes
 Info:            130561 KBytes free for stack + heap.
 Info: Creating LCFR.objdump
 nios2-elf-objdump --disassemble --syms --all-header --source LCFR.elf >LCFR.objdump
 [LCFR build complete]
+<<<<<<< Updated upstream
 12:39:16 **** Incremental Build of configuration Nios II for project LCFR ****
+=======
+22:18:44 **** Incremental Build of configuration Nios II for project LCFR ****
+>>>>>>> Stashed changes
 make all 
 Info: Building ../LCFR_bsp/
 C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
 [BSP build complete]
 [LCFR build complete]
+<<<<<<< Updated upstream
 12:39:56 **** Build of configuration Nios II for project LCFR ****
+=======
+22:19:58 **** Build of configuration Nios II for project LCFR ****
+>>>>>>> Stashed changes
 make all 
 Info: Building ../LCFR_bsp/
 C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
@@ -333,6 +531,7 @@ C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-dir
 Info: Compiling LCFR.c to obj/default/LCFR.o
 nios2-elf-gcc -xc -MP -MMD -c -I../LCFR_bsp//HAL/inc -I../LCFR_bsp/ -I../LCFR_bsp//drivers/inc  -pipe -D__hal__ -DALT_NO_INSTRUCTION_EMULATION -DALT_SINGLE_THREADED    -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o obj/default/LCFR.o LCFR.c
 LCFR.c: In function 'button_interrupts_function':
+<<<<<<< Updated upstream
 LCFR.c:95:21: warning: variable 'msg' set but not used [-Wunused-but-set-variable]
      AdcCountMessage msg;
                      ^
@@ -363,23 +562,58 @@ LCFR.c:35:13: warning: 'T_RecordTimeDisplay' declared 'static' but never defined
  static void T_RecordTimeDisplay (void *pvParameters);
              ^
 LCFR.c:37:13: warning: 'T_UpdateThreshold' declared 'static' but never defined [-Wunused-function]
+=======
+LCFR.c:115:21: warning: variable 'msg' set but not used [-Wunused-but-set-variable]
+     AdcCountMessage msg;
+                     ^
+LCFR.c:114:16: warning: unused variable 'xHigherPriorityTaskWoken' [-Wunused-variable]
+     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+                ^
+LCFR.c: In function 'ISR_Init':
+LCFR.c:205:49: warning: passing argument 3 of 'alt_irq_register' from incompatible pointer type [-Wincompatible-pointer-types]
+     alt_irq_register(FREQUENCY_ANALYSER_IRQ, 0, freq_relay_function);
+                                                 ^
+In file included from ../LCFR_bsp//HAL/inc/sys/alt_irq.h:218:0,
+                 from LCFR.c:8:
+../LCFR_bsp//HAL/inc/priv/alt_legacy_irq.h:61:12: note: expected 'alt_isr_func {aka void (*)(void *, long unsigned int)}' but argument is of type 'void (*)(void *)'
+ extern int alt_irq_register (alt_u32 id, 
+            ^
+LCFR.c: At top level:
+LCFR.c:40:13: warning: 'T_RecordTimeDisplay' declared 'static' but never defined [-Wunused-function]
+ static void T_RecordTimeDisplay (void *pvParameters);
+             ^
+LCFR.c:41:13: warning: 'T_UpdateThreshold' declared 'static' but never defined [-Wunused-function]
+>>>>>>> Stashed changes
  static void T_UpdateThreshold (void *pvParameters);
              ^
 Info: Linking LCFR.elf
 nios2-elf-g++  -T'../LCFR_bsp//linker.x' -msys-crt0='../LCFR_bsp//obj/HAL/src/crt0.o' -msys-lib=hal_bsp -L../LCFR_bsp/   -Wl,-Map=LCFR.map   -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o LCFR.elf obj/default/FreeRTOS/croutine.o obj/default/FreeRTOS/event_groups.o obj/default/FreeRTOS/heap.o obj/default/FreeRTOS/list.o obj/default/FreeRTOS/port.o obj/default/FreeRTOS/queue.o obj/default/FreeRTOS/tasks.o obj/default/FreeRTOS/timers.o obj/default/LCFR.o obj/default/FreeRTOS/port_asm.o -lm -msys-lib=m
+<<<<<<< Updated upstream
 nios2-elf-insert LCFR.elf --thread_model hal --cpu_name nios2 --qsys true --simulation_enabled false --id 7 --sidp 0x430f0 --timestamp 1393900972 --stderr_dev jtag_uart --stdin_dev jtag_uart --stdout_dev jtag_uart --sopc_system_name nios2 --quartus_project_dir "C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles" --sopcinfo C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles/software/LCFR_bsp/../../nios2.sopcinfo
 Info: (LCFR.elf) 610 KBytes program size (code + initialized data).
+=======
+nios2-elf-insert LCFR.elf --thread_model hal --cpu_name nios2 --qsys true --simulation_enabled false --id 7 --sidp 0x430f0 --timestamp 1393900972 --stderr_dev jtag_uart --stdin_dev jtag_uart --stdout_dev jtag_uart --sopc_system_name nios2 --quartus_project_dir "C:/intelFPGA_lite/18.1/701/LowCostFrequencyRelay/Main/Projectfiles" --sopcinfo C:/intelFPGA_lite/18.1/701/LowCostFrequencyRelay/Main/Projectfiles/software/LCFR_bsp/../../nios2.sopcinfo
+Info: (LCFR.elf) 612 KBytes program size (code + initialized data).
+>>>>>>> Stashed changes
 Info:            130561 KBytes free for stack + heap.
 Info: Creating LCFR.objdump
 nios2-elf-objdump --disassemble --syms --all-header --source LCFR.elf >LCFR.objdump
 [LCFR build complete]
+<<<<<<< Updated upstream
 12:39:59 **** Incremental Build of configuration Nios II for project LCFR ****
+=======
+22:20:01 **** Incremental Build of configuration Nios II for project LCFR ****
+>>>>>>> Stashed changes
 make all 
 Info: Building ../LCFR_bsp/
 C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
 [BSP build complete]
 [LCFR build complete]
+<<<<<<< Updated upstream
 12:43:19 **** Build of configuration Nios II for project LCFR ****
+=======
+22:23:50 **** Build of configuration Nios II for project LCFR ****
+>>>>>>> Stashed changes
 make all 
 Info: Building ../LCFR_bsp/
 C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
@@ -387,6 +621,7 @@ C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-dir
 Info: Compiling LCFR.c to obj/default/LCFR.o
 nios2-elf-gcc -xc -MP -MMD -c -I../LCFR_bsp//HAL/inc -I../LCFR_bsp/ -I../LCFR_bsp//drivers/inc  -pipe -D__hal__ -DALT_NO_INSTRUCTION_EMULATION -DALT_SINGLE_THREADED    -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o obj/default/LCFR.o LCFR.c
 LCFR.c: In function 'button_interrupts_function':
+<<<<<<< Updated upstream
 LCFR.c:95:21: warning: variable 'msg' set but not used [-Wunused-but-set-variable]
      AdcCountMessage msg;
                      ^
@@ -417,16 +652,44 @@ LCFR.c:35:13: warning: 'T_RecordTimeDisplay' declared 'static' but never defined
  static void T_RecordTimeDisplay (void *pvParameters);
              ^
 LCFR.c:37:13: warning: 'T_UpdateThreshold' declared 'static' but never defined [-Wunused-function]
+=======
+LCFR.c:115:21: warning: variable 'msg' set but not used [-Wunused-but-set-variable]
+     AdcCountMessage msg;
+                     ^
+LCFR.c:114:16: warning: unused variable 'xHigherPriorityTaskWoken' [-Wunused-variable]
+     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+                ^
+LCFR.c: In function 'ISR_Init':
+LCFR.c:205:49: warning: passing argument 3 of 'alt_irq_register' from incompatible pointer type [-Wincompatible-pointer-types]
+     alt_irq_register(FREQUENCY_ANALYSER_IRQ, 0, freq_relay_function);
+                                                 ^
+In file included from ../LCFR_bsp//HAL/inc/sys/alt_irq.h:218:0,
+                 from LCFR.c:8:
+../LCFR_bsp//HAL/inc/priv/alt_legacy_irq.h:61:12: note: expected 'alt_isr_func {aka void (*)(void *, long unsigned int)}' but argument is of type 'void (*)(void *)'
+ extern int alt_irq_register (alt_u32 id, 
+            ^
+LCFR.c: At top level:
+LCFR.c:40:13: warning: 'T_RecordTimeDisplay' declared 'static' but never defined [-Wunused-function]
+ static void T_RecordTimeDisplay (void *pvParameters);
+             ^
+LCFR.c:41:13: warning: 'T_UpdateThreshold' declared 'static' but never defined [-Wunused-function]
+>>>>>>> Stashed changes
  static void T_UpdateThreshold (void *pvParameters);
              ^
 Info: Linking LCFR.elf
 nios2-elf-g++  -T'../LCFR_bsp//linker.x' -msys-crt0='../LCFR_bsp//obj/HAL/src/crt0.o' -msys-lib=hal_bsp -L../LCFR_bsp/   -Wl,-Map=LCFR.map   -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o LCFR.elf obj/default/FreeRTOS/croutine.o obj/default/FreeRTOS/event_groups.o obj/default/FreeRTOS/heap.o obj/default/FreeRTOS/list.o obj/default/FreeRTOS/port.o obj/default/FreeRTOS/queue.o obj/default/FreeRTOS/tasks.o obj/default/FreeRTOS/timers.o obj/default/LCFR.o obj/default/FreeRTOS/port_asm.o -lm -msys-lib=m
+<<<<<<< Updated upstream
 nios2-elf-insert LCFR.elf --thread_model hal --cpu_name nios2 --qsys true --simulation_enabled false --id 7 --sidp 0x430f0 --timestamp 1393900972 --stderr_dev jtag_uart --stdin_dev jtag_uart --stdout_dev jtag_uart --sopc_system_name nios2 --quartus_project_dir "C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles" --sopcinfo C:/Users/cta10/OneDrive/Desktop/FancyProject/LowCostFrequencyRelay/Main/Projectfiles/software/LCFR_bsp/../../nios2.sopcinfo
 Info: (LCFR.elf) 610 KBytes program size (code + initialized data).
+=======
+nios2-elf-insert LCFR.elf --thread_model hal --cpu_name nios2 --qsys true --simulation_enabled false --id 7 --sidp 0x430f0 --timestamp 1393900972 --stderr_dev jtag_uart --stdin_dev jtag_uart --stdout_dev jtag_uart --sopc_system_name nios2 --quartus_project_dir "C:/intelFPGA_lite/18.1/701/LowCostFrequencyRelay/Main/Projectfiles" --sopcinfo C:/intelFPGA_lite/18.1/701/LowCostFrequencyRelay/Main/Projectfiles/software/LCFR_bsp/../../nios2.sopcinfo
+Info: (LCFR.elf) 612 KBytes program size (code + initialized data).
+>>>>>>> Stashed changes
 Info:            130561 KBytes free for stack + heap.
 Info: Creating LCFR.objdump
 nios2-elf-objdump --disassemble --syms --all-header --source LCFR.elf >LCFR.objdump
 [LCFR build complete]
+<<<<<<< Updated upstream
 12:43:21 **** Incremental Build of configuration Nios II for project LCFR ****
 make all 
 Info: Building ../LCFR_bsp/
@@ -1254,6 +1517,9 @@ Info: Creating LCFR.objdump
 nios2-elf-objdump --disassemble --syms --all-header --source LCFR.elf >LCFR.objdump
 [LCFR build complete]
 13:16:44 **** Incremental Build of configuration Nios II for project LCFR ****
+=======
+22:23:55 **** Incremental Build of configuration Nios II for project LCFR ****
+>>>>>>> Stashed changes
 make all 
 Info: Building ../LCFR_bsp/
 C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/

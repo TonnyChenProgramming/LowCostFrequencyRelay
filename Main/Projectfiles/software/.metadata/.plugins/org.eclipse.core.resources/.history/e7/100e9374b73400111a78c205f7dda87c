@@ -1,0 +1,54 @@
+#include <stdio.h>
+
+#define LOW_FREQ_THRESHOLD 49.0
+#define HIGH_ROC_THRESHOLD 1.0
+#define SAMPLING_FREQ_HZ 16000.0
+#define MAXIMUM_LOAD_NUMBER 5
+
+#define T_FreqAndRoc_PRIORITY			4
+#define T_VgaDisplay_PRIORITY			6
+#define T_StabilityMonitor_PRIORITY		4
+#define T_SwitchPolling_PRIORITY		5
+#define T_LoadCtrl_PRIORITY				3
+#define T_RecordTimeDisplay_PRIORITY	6
+#define T_SwitchMode_PRIORITY			3
+#define T_UpdateThreshold_PRIORITY		3
+#define T_UpdateLed_PRIORITY			4
+
+typedef struct
+{
+    unsigned int adcCount;
+} AdcCountMessage;
+
+typedef struct
+{
+    double frequencyHz;
+    double rocHzPerSec;
+} FreqRocMessage;
+
+typedef struct
+{
+    double thresholdFreqHz;
+    double thresholdRocHzPerSec;
+} ThresholdMessage;
+
+typedef	struct
+{
+	uint8_t producer_id; // 0- from T_SwitchPolling ; 1 = from T_StabilityMonitor
+	uint8_t switch_state;
+	uint8_t stability_state; // 0 - stable ; 1 - unstable
+} LoadCtrlMessage;
+
+typedef enum
+{
+    OBSERVE_NONE = 0,
+    OBSERVE_UNSTABLE,
+    OBSERVE_STABLE
+} ObserveState_t;
+
+// system variables
+static QueueHandle_t Q_adcCount;
+static QueueHandle_t Q_newFreqToVGA;
+static QueueHandle_t Q_newFreqToMonitor;
+static QueueHandle_t Q_newLoadCtrl;
+static QueueHandle_t Q_newLed;

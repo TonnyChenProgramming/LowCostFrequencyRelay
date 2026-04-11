@@ -301,119 +301,20 @@ static void T_StabilityMonitor(void *pvParameters){
 	  }
 }
 
-<<<<<<< Updated upstream
-static void T_SwitchMode(void *pvParameters)
-{
-	(void)pvParameters;
-	if(current_system_mode == MAINTENANCE){
-		//need to block the relay. stop it from any shedding
-	}
-	else{
-		//proceed normally
 
 
-	}
-
-}
-static void T_LoadCtrl(void *pvParameters)
-{
-    LoadCtrlMessage receivedMsg;
-<<<<<<< Updated upstream
-    (void)pvParameters; // Prevent compiler warning for unused parameter
-=======
-
-    static uint16_t current_user_switch_input;
-    static uint8_t current_stability_state;
-
-    static uint8_t requestedLoadMask = 0; // user leds
-    static uint8_t shedLoadMask = 0; // relay leds
-    static uint8_t actualLoadMask = 0; // what will be used to display the leds
-
-    static uint8_t networkUnstable = 0;
-    static uint8_t prevNetworkUnstable = 0; //init stability, and change as updates throughout code run
-
-    static uint8_t loadManaging = 0;
-    (void) pvParameters; // Prevent compiler warning for unused parameter
->>>>>>> Stashed changes
-=======
 static void T_LoadCtrl(void *pvParameters)
 {
     LoadCtrlMessage receivedMsg;
 
-    (void) pvParameters; // Prevent compiler warning for unused parameter
->>>>>>> Stashed changes
+    (void) pvParameters;
 
-    uint8_t oldEffective = 0;//old mask for red leds
-    uint8_t newEffective = 0;//new mask for red leds
+    uint8_t oldEffective = 0;
+    uint8_t newEffective = 0;
     for (;;)
     {
-        /* Listen to the Q_newFreqToVGA queue */
         if (xQueueReceive(Q_newLoadCtrl, &receivedMsg, portMAX_DELAY) == pdPASS)
         {
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-        	if (receivedMsg.producer_id == 0) //switch generated
-        	{
-        		IOWR_ALTERA_AVALON_PIO_DATA(RED_LEDS_BASE, receivedMsg.switch_state);
-        	}
-        	else if (receivedMsg.producer_id == 1) // stability monitor generated
-        	{
-
-        	}
-=======
-        	printf("[%d , %d, %d]",receivedMsg.producer_id, receivedMsg.stability_state, receivedMsg.switch_state);
-
-            // Parse the correct information based on packet id
-            if (receivedMsg.producer_id == 0)
-            {
-                current_user_switch_input = receivedMsg.switch_state & 0x1F;
-            }
-            else if (receivedMsg.producer_id == 1)
-            {
-                current_stability_state = receivedMsg.stability_state;
-            }
-
-            // Update LEDs mask based on current system state,
-            // and latest switch + stability state
-
-            if (current_system_mode == MAINTENANCE)
-            {
-            	printf("enter the maintenance branch\n");
-                // In maintenance state, only switches control the load
-            	xQueueSendToBack(Q_newLed, &current_user_switch_input, portMAX_DELAY);
-
-            }
-            else if (current_system_mode == LOAD_MANAGING)
-            {
-                if (receivedMsg.producer_id == 0)
-                {
-                    // User able to turn off loads, cannot turn on a load if relay has shed
-                    requestedLoadMask = 0; // reset all switch-based LEDs
-                }
-                else if (receivedMsg.producer_id == 1)
-                {
-                    current_stability_state = receivedMsg.stability_state;
-                }
-            }
->>>>>>> Stashed changes
-        }
-    }
-}
-static void T_UpdateLed(void *pvParameters)
-{
-	uint16_t receivedMsg;
-	for(;;)
-	{
-		if (xQueueReceive(Q_newLed, &receivedMsg, portMAX_DELAY) == pdPASS)
-		{
-			printf("enter the led branch\n");
-            uint8_t greenMask = (uint8_t)(receivedMsg & 0x00FF);
-            uint8_t redMask   = (uint8_t)((receivedMsg >> 8) & 0x00FF);
-
-            IOWR_ALTERA_AVALON_PIO_DATA(GREEN_LEDS_BASE, greenMask);
-            IOWR_ALTERA_AVALON_PIO_DATA(RED_LEDS_BASE, redMask);
-=======
-            // Parse the correct information based on packet id
             if (receivedMsg.producer_id == 0)
             {
                 uint8_t newMask = receivedMsg.switch_state & 0x1F;
@@ -422,16 +323,16 @@ static void T_UpdateLed(void *pvParameters)
                 {
                     if (userLoadMask == 0 && shedByRelayMask == 0)
                     {
-                        userLoadMask = newMask;   // bootstrap initial state
+                        userLoadMask = newMask;
                     }
                     else
                     {
-                        userLoadMask = userLoadMask & newMask;   // only allow closing
+                        userLoadMask = userLoadMask & newMask;
                     }
                 }
                 else
                 {
-                    userLoadMask = newMask;                 // normal
+                    userLoadMask = newMask;
                 }
             }
             else if (receivedMsg.producer_id == 1)
@@ -440,16 +341,13 @@ static void T_UpdateLed(void *pvParameters)
             }
             else if (receivedMsg.producer_id == 2)
             {
-            	current_action = receivedMsg.shed_or_recover;
+                current_action = receivedMsg.shed_or_recover;
             }
-
-            // Update LEDs mask based on MAINTENANCE/LOAD_MANAGING state,
-            // and latest switch + stability state
 
             if (current_system_mode == MAINTENANCE)
             {
-            	xTimerStop(xManageTimer, 0);
-            	waitingForTimer = 0;
+                xTimerStop(xManageTimer, 0);
+                waitingForTimer = 0;
                 shedByRelayMask = 0;
                 effectiveLoadMask = userLoadMask & 0x1F;
                 uint8_t greenMask = 0;
@@ -459,87 +357,76 @@ static void T_UpdateLed(void *pvParameters)
             }
             else if (current_system_mode == LOAD_MANAGING)
             {
-            	//printf("enter the load managing branch\n");
-
-                if (receivedMsg.producer_id == 1) //packets from stability detection task
+                if (receivedMsg.producer_id == 1)
                 {
-                	//capture state change
                     if (prevNetworkUnstable != currentNetworkUnstable)
                     {
-                    	//ensure that in the first shed, prevNetworkUnstable is always 0
-                        if (currentNetworkUnstable && !waitingForTimer) // the first shed
+                        if (currentNetworkUnstable && !waitingForTimer)
                         {
                             oldEffective = userLoadMask & (~shedByRelayMask) & 0x1F;
                             shedByRelayMask = addLowestPriorityShed(userLoadMask, shedByRelayMask);
                             newEffective = userLoadMask & (~shedByRelayMask) & 0x1F;
 
-                            if (oldEffective != newEffective) // to prevent case thats no loads
+                            if (oldEffective != newEffective)
                             {
-
                                 xTimerReset(xManageTimer, 0);
                                 waitingForTimer = 1;
                             }
                         }
                         else
                         {
-                            xTimerReset(xManageTimer, 0); //reset the timer as state change
+                            xTimerReset(xManageTimer, 0);
                             waitingForTimer = 1;
                         }
 
                         prevNetworkUnstable = currentNetworkUnstable;
                     }
-
                 }
-                else if (receivedMsg.producer_id == 2)//packets from shed/recover timer
+                else if (receivedMsg.producer_id == 2)
                 {
-                	if (current_action == 1)
-                	{
-                		//to shed
-                		oldEffective = userLoadMask & (~shedByRelayMask) & 0x1F;
-                		shedByRelayMask = addLowestPriorityShed(userLoadMask, shedByRelayMask);
-                		newEffective = userLoadMask & (~shedByRelayMask) & 0x1F;
+                    if (current_action == 1)
+                    {
+                        oldEffective = userLoadMask & (~shedByRelayMask) & 0x1F;
+                        shedByRelayMask = addLowestPriorityShed(userLoadMask, shedByRelayMask);
+                        newEffective = userLoadMask & (~shedByRelayMask) & 0x1F;
 
-                		if (oldEffective != newEffective) {
-                		    xTimerReset(xManageTimer, 0);
-                		    waitingForTimer = 1;
-                		} else {
-                		    xTimerStop(xManageTimer, 0);
-                		    waitingForTimer = 0;
-                		}
-                		printf("500ms unstable -> shed next load, mask = 0x%X\n", shedByRelayMask);
+                        if (oldEffective != newEffective) {
+                            xTimerReset(xManageTimer, 0);
+                            waitingForTimer = 1;
+                        } else {
+                            xTimerStop(xManageTimer, 0);
+                            waitingForTimer = 0;
+                        }
+                    }
+                    else if (current_action == 2)
+                    {
+                        uint8_t oldShed = shedByRelayMask;
+                        shedByRelayMask = recoverHighestPriorityShed(userLoadMask, shedByRelayMask);
 
-                	} else if (current_action == 2)
-                	{
-                		//to recover
-                		uint8_t oldShed = shedByRelayMask;
-                		shedByRelayMask = recoverHighestPriorityShed(userLoadMask, shedByRelayMask);
-
-                		if (oldShed != shedByRelayMask) {
-                		    if ((shedByRelayMask & userLoadMask) != 0) {
-                		        xTimerReset(xManageTimer, 0);
-                		        waitingForTimer = 1;
-                		    } else {
-                		        xTimerStop(xManageTimer, 0);
-                		        waitingForTimer = 0;
-                		    }
-                		} else {
-                		    xTimerStop(xManageTimer, 0);
-                		    waitingForTimer = 0;
-                		}
-                		printf("500ms stable -> reconnect one load, mask = 0x%X\n", shedByRelayMask);
-                	}
+                        if (oldShed != shedByRelayMask) {
+                            if ((shedByRelayMask & userLoadMask) != 0) {
+                                xTimerReset(xManageTimer, 0);
+                                waitingForTimer = 1;
+                            } else {
+                                xTimerStop(xManageTimer, 0);
+                                waitingForTimer = 0;
+                            }
+                        } else {
+                            xTimerStop(xManageTimer, 0);
+                            waitingForTimer = 0;
+                        }
+                    }
                 }
-                effectiveLoadMask = userLoadMask & (~shedByRelayMask)& 0x1F ;
+
+                effectiveLoadMask = userLoadMask & (~shedByRelayMask) & 0x1F;
                 uint8_t greenMask = shedByRelayMask & userLoadMask;
 
                 xQueueSendToBack(Q_newRedLed, &effectiveLoadMask, portMAX_DELAY);
                 xQueueSendToBack(Q_newGreenLed, &greenMask, portMAX_DELAY);
-                }
-
             }
-
         }
     }
+}
 static void T_UpdateRedLed(void *pvParameters)
 {
 	uint8_t receivedMsg;
@@ -548,7 +435,7 @@ static void T_UpdateRedLed(void *pvParameters)
 		if (xQueueReceive(Q_newRedLed, &receivedMsg, portMAX_DELAY) == pdPASS)
 		{
             IOWR_ALTERA_AVALON_PIO_DATA(RED_LEDS_BASE, receivedMsg);
->>>>>>> Stashed changes
+
 		}
 	}
 

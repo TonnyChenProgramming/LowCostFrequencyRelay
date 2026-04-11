@@ -1,0 +1,8 @@
+#include "main.h"
+
+// system variables
+static QueueHandle_t Q_adcCount;
+static QueueHandle_t Q_newFreqToVGA;
+static QueueHandle_t Q_newFreqToMonitor;
+static QueueHandle_t Q_newLoadCtrl;
+static QueueHandle_t Q_newLed;

@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <project>
+<<<<<<< Updated upstream
 	<configuration id="preference.org.eclipse.cdt.managedbuilder.core.configurationDataProvider.1611186421" name="Nios II">
+=======
+	<configuration id="preference.org.eclipse.cdt.managedbuilder.core.configurationDataProvider.369115833" name="Nios II">
+>>>>>>> Stashed changes
 		<extension point="org.eclipse.cdt.core.LanguageSettingsProvider">
 			<provider id="altera.tool.Nios2GCCBuiltinSpecsDetector">
 				<language id="org.eclipse.cdt.core.gcc">

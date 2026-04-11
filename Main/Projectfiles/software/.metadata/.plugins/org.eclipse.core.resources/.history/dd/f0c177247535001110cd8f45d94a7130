@@ -1,0 +1,456 @@
+/* Standard includes. */
+#include <stdio.h>
+#include <stdbool.h>
+#include <math.h>
+#include "system.h"
+#include "io.h"
+#include "altera_avalon_pio_regs.h"
+#include "sys/alt_irq.h"
+
+/* Scheduler includes. */
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/queue.h"
+#include "FreeRTOS/timers.h"
+
+/* The parameters passed to the reg test tasks.  This is just done to check
+ the parameter passing mechanism is working correctly. */
+#define LOW_FREQ_THRESHOLD 49.0
+#define HIGH_ROC_THRESHOLD 1.0
+#define SAMPLING_FREQ_HZ 16000.0
+#define MAXIMUM_LOAD_NUMBER 5
+#define PRODUCER_SWITCH    0
+#define PRODUCER_STABILITY 1
+#define PRODUCER_TIMER     2
+
+#define T_FreqAndRoc_PRIORITY			4
+#define T_VgaDisplay_PRIORITY			3
+#define T_StabilityMonitor_PRIORITY		4
+#define T_SwitchPolling_PRIORITY		4
+#define T_LoadCtrl_PRIORITY				5
+#define T_RecordTimeDisplay_PRIORITY	2
+#define T_UpdateThreshold_PRIORITY		3
+#define T_UpdateLed_PRIORITY			3
+
+static void T_FreqAndRoc(void *pvParameters);
+static void T_VgaDisplay(void *pvParameters);
+static void T_SwitchPolling(void *pvParameters);
+static void T_LoadCtrl(void *pvParameters);
+static void T_StabilityMonitor(void *pvParameters);
+static void T_RecordTimeDisplay (void *pvParameters);
+static void T_UpdateThreshold (void *pvParameters);
+static void T_UpdateRedLed(void *pvParameters);
+static void T_UpdateGreenLed(void *pvParameters);
+static void ISR_Init(void);
+
+uint8_t addLowestPriorityShed(uint8_t userMask, uint8_t shedMask);
+uint8_t recoverHighestPriorityShed(uint8_t userMask, uint8_t shedMask);
+// structure declaration
+typedef struct
+{
+    unsigned int adcCount;
+} AdcCountMessage;
+
+typedef struct
+{
+    double frequencyHz;
+    double rocHzPerSec;
+} FreqRocMessage;
+
+typedef struct
+{
+    double thresholdFreqHz;
+    double thresholdRocHzPerSec;
+} ThresholdMessage;
+
+typedef	struct
+{
+	uint8_t producer_id; // 0- from T_SwitchPolling ; 1 = from T_StabilityMonitor ; 2 = from timer
+	uint8_t switch_state;
+	uint8_t stability_state; // 0 - stable ; 1 - unstable
+	uint8_t shed_or_recover; // 0 - invalid, 1 - shed, 2 - recover
+} LoadCtrlMessage;
+
+typedef enum
+{
+    OBSERVE_NONE = 0,
+    OBSERVE_UNSTABLE,
+    OBSERVE_STABLE
+} ObserveState_t;
+
+// system variables
+static QueueHandle_t Q_adcCount;
+static QueueHandle_t Q_newFreqToVGA;
+static QueueHandle_t Q_newFreqToMonitor;
+static QueueHandle_t Q_newLoadCtrl;
+static QueueHandle_t Q_newRedLed;
+static QueueHandle_t Q_newGreenLed;
+
+static TimerHandle_t xManageTimer;
+static volatile ObserveState_t observeState = OBSERVE_NONE;
+
+enum mode {
+	MAINTENANCE,
+	LOAD_MANAGING
+};
+
+enum mode current_system_mode = MAINTENANCE;
+//static uint8_t shedLoadMask = 0; // relay leds
+//static uint8_t number_of_activated_loads = MAXIMUM_LOAD_NUMBER;
+//static uint8_t currentNetworkUnstable = 0;
+//static uint8_t prevNetworkUnstable = 1; //init stability, and change as updates throughout code run
+static uint8_t userLoadMask = 0;
+static uint8_t shedByRelayMask = 0;
+static uint8_t effectiveLoadMask = 0;
+static uint8_t currentNetworkUnstable = 0;
+static uint8_t prevNetworkUnstable = 0;
+
+void freq_relay_function(void *context)
+{
+    AdcCountMessage msg;
+
+    (void)context;
+
+    msg.adcCount = IORD(FREQUENCY_ANALYSER_BASE, 0);
+    xQueueSendToBackFromISR(Q_adcCount, &msg, NULL);
+}
+
+// push button to change modes
+void button_interrupts_function(void* context, alt_u32 id)
+{
+    // 1. Cast context (pointer to our buttonValue)
+    int* temp = (int*) context;
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    AdcCountMessage msg;
+
+    // 2. Read capture and Mimic Analyser
+    // We store the edge capture value into the context variable
+    *temp = IORD_ALTERA_AVALON_PIO_EDGE_CAP(PUSH_BUTTON_BASE);
+
+    // Mimic the Analyser: 320 count = 50Hz
+    msg.adcCount = 320;
+    //printf(".2%f", msg);
+
+    //enum to swap modes
+    if(current_system_mode == MAINTENANCE){
+    	current_system_mode = LOAD_MANAGING;
+    	printf("LOAD_MANAGING\n");
+    } else{
+    	current_system_mode = MAINTENANCE;
+    	printf("MAINTENANCE\n");
+    }
+
+
+    // 3. Send to Queue (Use FromISR version)
+    //xQueueSendToBackFromISR(Q_adcCount, &msg, &xHigherPriorityTaskWoken);
+
+    // 4. Clear the edge capture register so the interrupt doesn't re-fire
+    IOWR_ALTERA_AVALON_PIO_EDGE_CAP(PUSH_BUTTON_BASE, 0x7);
+
+    // 5. Context Switch: Tells FreeRTOS to check if a task is now ready
+    //portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
+void vTimerCallback(xTimerHandle t_timer){
+	printf("enterrrrrrrrrrrrr\n");
+    if ((!prevNetworkUnstable) && currentNetworkUnstable)
+    {
+    	printf("shed/n");
+    	shedByRelayMask = addLowestPriorityShed(userLoadMask,shedByRelayMask);
+		printf("500ms unstable -> shed next load, mask = 0x%X\n", shedByRelayMask);
+		/* continue observing unstable if still unstable */
+		prevNetworkUnstable = currentNetworkUnstable; // update previous state
+		xTimerReset(xManageTimer, 0);
+    }
+    else if ((!currentNetworkUnstable)&& prevNetworkUnstable)
+    {
+    	printf("recover/n");
+    	shedByRelayMask = recoverHighestPriorityShed(userLoadMask,shedByRelayMask);
+		printf("500ms stable -> reconnect one load, mask = 0x%X\n", shedByRelayMask);
+		/* continue observing stable if still stable */
+		prevNetworkUnstable = currentNetworkUnstable;
+		xTimerReset(xManageTimer, 0); //update previous state
+
+    }
+
+}
+
+/*
+ * Create the demo tasks then start the scheduler.
+ */
+int main(void)
+{
+	// reset all leds
+	IOWR_ALTERA_AVALON_PIO_DATA(GREEN_LEDS_BASE, 0x0);
+	IOWR_ALTERA_AVALON_PIO_DATA(RED_LEDS_BASE, 0x0);
+
+	ISR_Init();
+    /* --- Queue Initialization --- */
+    Q_adcCount = xQueueCreate(5, sizeof(AdcCountMessage));
+    Q_newFreqToVGA = xQueueCreate(5, sizeof(FreqRocMessage));
+    Q_newFreqToMonitor = xQueueCreate(5, sizeof(FreqRocMessage));
+    Q_newLoadCtrl = xQueueCreate(10, sizeof(LoadCtrlMessage));
+    Q_newRedLed = xQueueCreate(5,sizeof(uint8_t));
+    Q_newGreenLed = xQueueCreate(5,sizeof(uint8_t));
+    /* --- Task Creation --- */
+    xTaskCreate(T_FreqAndRoc, "Logic", configMINIMAL_STACK_SIZE, NULL, T_FreqAndRoc_PRIORITY, NULL);
+    xTaskCreate(T_VgaDisplay, "Print", configMINIMAL_STACK_SIZE, NULL, T_VgaDisplay_PRIORITY, NULL);
+    xTaskCreate(T_SwitchPolling, "Logic", configMINIMAL_STACK_SIZE, NULL, T_SwitchPolling_PRIORITY, NULL);
+    xTaskCreate(T_StabilityMonitor, "Logic", configMINIMAL_STACK_SIZE, NULL,T_StabilityMonitor_PRIORITY, NULL);
+    xTaskCreate(T_LoadCtrl, "Logic", configMINIMAL_STACK_SIZE, NULL,T_LoadCtrl_PRIORITY, NULL);
+    xTaskCreate(T_UpdateRedLed, "Print", configMINIMAL_STACK_SIZE, NULL,T_UpdateLed_PRIORITY, NULL);
+    xTaskCreate(T_UpdateGreenLed, "Print", configMINIMAL_STACK_SIZE, NULL,T_UpdateLed_PRIORITY, NULL);
+
+    vTaskStartScheduler();
+
+    for (;;);
+}
+
+static void ISR_Init(void)
+{
+    static int buttonValue = 0;
+    /* --- Hardware Interrupt Setup --- */
+    // initialise push button isr
+    IOWR_ALTERA_AVALON_PIO_EDGE_CAP(PUSH_BUTTON_BASE, 0x7);
+    IOWR_ALTERA_AVALON_PIO_IRQ_MASK(PUSH_BUTTON_BASE, 0x7);
+    alt_irq_register(PUSH_BUTTON_IRQ, (void*)&buttonValue, button_interrupts_function);
+
+    //initialise 500 ms timer isr
+    xManageTimer = xTimerCreate("500msTimer", pdMS_TO_TICKS(500), pdTRUE, NULL, vTimerCallback);
+
+    //initialise frequency analyser isr
+    alt_irq_register(FREQUENCY_ANALYSER_IRQ, 0, freq_relay_function);
+}
+
+static void T_FreqAndRoc(void *pvParameters)
+{
+
+    AdcCountMessage inMsg;
+    FreqRocMessage outMsg;
+    double prevFreq = 0.0;
+    bool first = true;
+
+    (void)pvParameters;
+
+    for (;;)
+    {
+        if (xQueueReceive(Q_adcCount, &inMsg, portMAX_DELAY) == pdPASS)
+        {
+            if (inMsg.adcCount == 0)
+            {
+                continue;
+            }
+            //printf("    task1 activated");
+
+            outMsg.frequencyHz = SAMPLING_FREQ_HZ / (double)inMsg.adcCount;
+
+            if (first)
+            {
+                outMsg.rocHzPerSec = 0.0;
+                first = false;
+            }
+            else
+            {
+                double deltaT = (double)inMsg.adcCount / SAMPLING_FREQ_HZ;
+                outMsg.rocHzPerSec = (outMsg.frequencyHz - prevFreq) / deltaT;
+            }
+
+            prevFreq = outMsg.frequencyHz;
+
+            xQueueSendToBack(Q_newFreqToVGA, &outMsg, portMAX_DELAY);
+            xQueueSendToBack(Q_newFreqToMonitor, &outMsg, portMAX_DELAY);
+        }
+    }
+
+}
+
+static void T_VgaDisplay(void *pvParameters)
+{
+    /* Use the correct struct type for the message */
+    FreqRocMessage receivedMsg;
+
+    (void)pvParameters; // Prevent compiler warning for unused parameter
+
+    for (;;)
+    {
+        /* Listen to the Q_newFreqToVGA queue */
+        if (xQueueReceive(Q_newFreqToVGA, &receivedMsg, portMAX_DELAY) == pdPASS)
+        {
+            //printf("    task2 activated");
+            /* Print the frequency and RoC to the console */
+//            printf("VGA Monitor -> Freq: %.2f Hz | RoC: %.2f Hz/s\n",
+//                    receivedMsg.frequencyHz,
+//					fabs(receivedMsg.rocHzPerSec));
+        }
+    }
+}
+
+static void T_SwitchPolling(void *pvParameters)
+{
+	  unsigned int uiSwitchValue = 0;
+	  LoadCtrlMessage outMsg;
+	  for (;;)
+	  {
+		   uiSwitchValue = IORD_ALTERA_AVALON_PIO_DATA(SLIDE_SWITCH_BASE);
+		   outMsg.producer_id = 0;
+		   outMsg.switch_state = (uint8_t)uiSwitchValue;
+		   outMsg.shed_or_recover = 0;
+		   xQueueSendToBack(Q_newLoadCtrl, &outMsg, portMAX_DELAY);
+		   vTaskDelay(pdMS_TO_TICKS(1000));
+	  }
+}
+
+static void T_StabilityMonitor(void *pvParameters){
+	FreqRocMessage receivedMsg;
+	LoadCtrlMessage outMsg;
+
+	  for (;;)
+	  {
+		if (xQueueReceive(Q_newFreqToMonitor, &receivedMsg, portMAX_DELAY) == pdPASS)
+		{
+			outMsg.producer_id = 1;
+			outMsg.stability_state = 0;
+			uint8_t low_freq_flag = receivedMsg.frequencyHz < (double )LOW_FREQ_THRESHOLD;
+			uint8_t high_roc_flag = fabs(receivedMsg.rocHzPerSec) > (double)HIGH_ROC_THRESHOLD;
+			outMsg.stability_state = low_freq_flag | high_roc_flag;
+			outMsg.shed_or_recover = 0;
+			xQueueSendToBack(Q_newLoadCtrl, &outMsg, portMAX_DELAY);
+		}
+	  }
+}
+
+static void T_LoadCtrl(void *pvParameters)
+{
+    LoadCtrlMessage receivedMsg;
+
+    (void) pvParameters; // Prevent compiler warning for unused parameter
+
+
+    for (;;)
+    {
+        /* Listen to the Q_newFreqToVGA queue */
+        if (xQueueReceive(Q_newLoadCtrl, &receivedMsg, portMAX_DELAY) == pdPASS)
+        {
+            // Parse the correct information based on packet id
+            if (receivedMsg.producer_id == 0)
+            {
+            	userLoadMask = receivedMsg.switch_state & 0x1F;
+            }
+            else if (receivedMsg.producer_id == 1)
+            {
+                currentNetworkUnstable = receivedMsg.stability_state;
+            }
+
+            // Update LEDs mask based on current system state,
+            // and latest switch + stability state
+
+            if (current_system_mode == MAINTENANCE)
+            {
+            	//printf("enter the maintenance branch\n");
+                // In maintenance state, only switches control the load
+//            	number_of_activated_loads = calculateNumberOfSwitchOn(userLoadMask);
+//            	shedByRelayMask = userLoadMask;
+//            	printf("%d\n",number_of_activated_loads);
+//            	xQueueSendToBack(Q_newRedLed, &userLoadMask, portMAX_DELAY);
+//            	xQueueSendToBack(Q_newGreenLed, &empty_mask, portMAX_DELAY);//clear all red LEDs
+                shedByRelayMask = 0;
+                effectiveLoadMask = userLoadMask & 0x1F;
+                uint8_t greenMask = 0;
+
+                xQueueSendToBack(Q_newRedLed, &effectiveLoadMask, portMAX_DELAY);
+                xQueueSendToBack(Q_newGreenLed, &greenMask, portMAX_DELAY);
+            }
+            else if (current_system_mode == LOAD_MANAGING)
+            {
+            	//printf("enter the load managing branch\n");
+            	//clear all green LEDs
+
+                if (receivedMsg.producer_id == 1)
+                {
+                    if (prevNetworkUnstable != currentNetworkUnstable)
+                    {
+                        if (currentNetworkUnstable)
+                        {
+                            uint8_t oldEffective = userLoadMask & (~shedByRelayMask) & 0x1F;
+                            shedByRelayMask = addLowestPriorityShed(userLoadMask, shedByRelayMask);
+                            uint8_t newEffective = userLoadMask & (~shedByRelayMask) & 0x1F;
+
+                            if (oldEffective != newEffective)
+                            {
+                                xTimerReset(xManageTimer, 0);
+                            }
+                        }
+                        else
+                        {
+                            xTimerReset(xManageTimer, 0);
+                        }
+
+                        prevNetworkUnstable = currentNetworkUnstable;
+                    }
+
+                	}
+
+                }
+//                shedLoadMask = shedLoadMask & current_user_switch_input;
+//                number_of_activated_loads = calculateNumberOfSwitchOn(shedLoadMask);
+//                reversedshed = (~shedLoadMask) & 0x1f & current_user_switch_input ;
+
+                effectiveLoadMask = userLoadMask & (~shedByRelayMask)& 0x1F ;
+                uint8_t greenMask = shedByRelayMask & userLoadMask;
+
+                xQueueSendToBack(Q_newRedLed, &effectiveLoadMask, portMAX_DELAY);
+                xQueueSendToBack(Q_newGreenLed, &greenMask, portMAX_DELAY);
+            }
+
+        }
+    }
+static void T_UpdateRedLed(void *pvParameters)
+{
+	uint8_t receivedMsg;
+	for(;;)
+	{
+		if (xQueueReceive(Q_newRedLed, &receivedMsg, portMAX_DELAY) == pdPASS)
+		{
+            IOWR_ALTERA_AVALON_PIO_DATA(RED_LEDS_BASE, receivedMsg);
+		}
+	}
+
+}
+static void T_UpdateGreenLed(void *pvParameters)
+{
+	uint8_t receivedMsg;
+	for(;;)
+	{
+		if (xQueueReceive(Q_newGreenLed, &receivedMsg, portMAX_DELAY) == pdPASS)
+		{
+            IOWR_ALTERA_AVALON_PIO_DATA(GREEN_LEDS_BASE, receivedMsg);
+		}
+	}
+}
+
+uint8_t addLowestPriorityShed(uint8_t userMask, uint8_t shedMask)
+{
+    uint8_t effective = userMask & (~shedMask) & 0x1F;
+
+    for (uint8_t i = 0; i < MAXIMUM_LOAD_NUMBER; i++)
+    {
+        if (effective & (1 << i))
+        {
+            shedMask |= (1 << i);
+            break;
+        }
+    }
+    return shedMask;
+}
+uint8_t recoverHighestPriorityShed(uint8_t userMask, uint8_t shedMask)
+{
+    for (int8_t i = MAXIMUM_LOAD_NUMBER - 1; i >= 0; i--)
+    {
+        if ((shedMask & (1 << i)) && (userMask & (1 << i)))
+        {
+            shedMask &= ~(1 << i);
+            break;
+        }
+    }
+    return shedMask;
+}

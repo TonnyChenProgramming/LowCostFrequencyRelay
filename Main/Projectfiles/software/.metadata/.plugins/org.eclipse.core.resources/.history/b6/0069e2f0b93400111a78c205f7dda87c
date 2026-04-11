@@ -1,0 +1,8 @@
+#ifndef INTERRUPT_H
+#define INTERRUPT_H
+#include "sys/alt_irq.h"
+
+void ISR_Init(void);
+void FreqAnalyserISR(void *context);
+void button_interrupts_function(void* context, alt_u32 id);
+#endif

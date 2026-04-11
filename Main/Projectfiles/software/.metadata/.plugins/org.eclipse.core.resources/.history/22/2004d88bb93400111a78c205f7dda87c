@@ -1,0 +1,82 @@
+#include <stdio.h>
+#include <stdbool.h>
+#include <math.h>
+#include "system.h"
+#include "io.h"
+#include "altera_avalon_pio_regs.h"
+#include "sys/alt_irq.h"
+#include "FreeRTOS/timers.h"
+
+void FreqAnalyserISR(void *context)
+{
+    AdcCountMessage msg;
+
+    (void)context;
+
+    msg.adcCount = IORD(FREQUENCY_ANALYSER_BASE, 0);
+    xQueueSendToBackFromISR(Q_adcCount, &msg, NULL);
+}
+
+// push button to change modes
+void button_interrupts_function(void* context, alt_u32 id)
+{
+    // 1. Cast context (pointer to our buttonValue)
+    int* temp = (int*) context;
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    AdcCountMessage msg;
+
+    // 2. Read capture and Mimic Analyser
+    // We store the edge capture value into the context variable
+    *temp = IORD_ALTERA_AVALON_PIO_EDGE_CAP(PUSH_BUTTON_BASE);
+
+    // Mimic the Analyser: 320 count = 50Hz
+    msg.adcCount = 320;
+    //printf(".2%f", msg);
+
+    //enum to swap modes
+    if(current_system_mode == MAINTENANCE){
+    	current_system_mode = LOAD_MANAGING;
+    	printf("LOAD_MANAGING\n");
+    } else{
+    	current_system_mode = MAINTENANCE;
+    	printf("MAINTENANCE\n");
+    }
+
+
+    // 3. Send to Queue (Use FromISR version)
+    //xQueueSendToBackFromISR(Q_adcCount, &msg, &xHigherPriorityTaskWoken);
+
+    // 4. Clear the edge capture register so the interrupt doesn't re-fire
+    IOWR_ALTERA_AVALON_PIO_EDGE_CAP(PUSH_BUTTON_BASE, 0x7);
+
+    // 5. Context Switch: Tells FreeRTOS to check if a task is now ready
+    //portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+static void vManageTimerCallback(TimerHandle_t xTimer)
+{
+    (void)xTimer;
+
+    if (observeState == OBSERVE_UNSTABLE)
+    {
+        if (currentNetworkUnstable)
+        {
+        	shedLoadMask = removeLowestPriority(shedLoadMask);
+        	number_of_activated_loads --;
+            printf("500ms unstable -> shed next load, mask = 0x%X\n", currentLoadMask);
+            /* continue observing unstable if still unstable */
+            xTimerReset(xManageTimer, 0);
+
+        }
+    }
+    else if (observeState == OBSERVE_STABLE)
+    {
+        if (!currentNetworkUnstable)
+        {
+        	shedLoadMask = recoverHighestPriority(shedLoadMask);
+        	number_of_activated_loads ++;
+            printf("500ms stable -> reconnect one load, mask = 0x%X\n", currentLoadMask);
+            /* continue observing stable if still stable */
+            xTimerReset(xManageTimer, 0);
+        }
+    }
+}

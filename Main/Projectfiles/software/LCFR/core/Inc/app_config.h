@@ -1,0 +1,18 @@
+#ifndef APP_CONFIG_H
+#define APP_CONFIG_H
+
+#define LOW_FREQ_THRESHOLD 49.0;
+#define HIGH_ROC_THRESHOLD 1.0;
+#define SAMPLING_FREQ_HZ 16000.0
+
+#define T_FreqAndRoc_PRIORITY			4
+#define T_VgaDisplay_PRIORITY			6
+#define T_StabilityMonitor_PRIORITY		4
+#define T_SwitchPolling_PRIORITY		5
+#define T_LoadCtrl_PRIORITY				3
+#define T_RecordTimeDisplay_PRIORITY	6
+#define T_SwitchMode_PRIORITY			3
+#define T_UpdateThreshold_PRIORITY		3
+#define T_UpdateLed_PRIORITY			4
+
+#endif
