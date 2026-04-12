@@ -8,6 +8,8 @@
 #include "sys/alt_irq.h"
 #include "altera_up_avalon_video_character_buffer_with_dma.h"
 #include "altera_up_avalon_video_pixel_buffer_dma.h"
+#include "altera_up_avalon_ps2.h"
+#include "altera_up_ps2_keyboard.h"
 
 /* Scheduler includes. */
 #include "freertos/FreeRTOS.h"
@@ -86,11 +88,17 @@ typedef struct
 	unsigned int y2;
 }Line;
 
+typedef struct
+{
+    char ascii;
+}KeyMessage;
+
 // system variables
 static QueueHandle_t Q_adcCount;
 static QueueHandle_t Q_newFreqToVGA;
 static QueueHandle_t Q_newFreqToMonitor;
 static QueueHandle_t Q_newLoadCtrl;
+static QueueHandle_t Q_keyPress;
 
 enum mode {
 	MAINTENANCE,
@@ -141,6 +149,34 @@ void button_interrupts_function(void* context, alt_u32 id)
     // 5. Context Switch: Tells FreeRTOS to check if a task is now ready
     //portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
+
+void KeyBoardISR(void* ps2_device, alt_u32 id){
+    KeyMessage msg;
+    char ascii;
+    int status = 0;
+    unsigned char key = 0;
+    KB_CODE_TYPE decode_mode;
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+    
+    
+    status = decode_scancode (context, &decode_mode , &key , &ascii) ;
+
+    if(status != 0){
+        return;
+    }
+    if(decode_mode != KB_CODE_TYPE){
+        return;
+    }
+    
+    msg.ascii = ascii;
+
+    xQueueSendToBackFromISR(Q_keyPress, &msg, &xHigherPriorityTaskWoken);
+
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken); // forces priority on the threshold updater
+
+
+}
 /*
  * Create the demo tasks then start the scheduler.
  */
@@ -153,6 +189,7 @@ int main(void)
     Q_newFreqToVGA = xQueueCreate(5, sizeof(FreqRocMessage));
     Q_newFreqToMonitor = xQueueCreate(5, sizeof(FreqRocMessage));
     Q_newLoadCtrl = xQueueCreate(5, sizeof(LoadCtrlMessage));
+    Q_keyPress = xQueueCreate(5, sizeof(KeyMessage));
 
     /* --- Task Creation --- */
     xTaskCreate(T_FreqAndRoc, "Logic", configMINIMAL_STACK_SIZE, NULL, T_FreqAndRoc_PRIORITY, NULL);
@@ -161,6 +198,7 @@ int main(void)
     xTaskCreate(T_StabilityMonitor, "Logic", configMINIMAL_STACK_SIZE, NULL,T_StabilityMonitor_PRIORITY, NULL);
     xTaskCreate(T_SwitchMode, "Logic", configMINIMAL_STACK_SIZE, NULL,T_SwitchMode_PRIORITY, NULL);
     xTaskCreate(T_LoadCtrl, "Logic", configMINIMAL_STACK_SIZE, NULL,T_LoadCtrl_PRIORITY, NULL);
+    xTaskCreate(T_UpdateThreshold, "Logic", configMINIMAL_STACK_SIZE, NULL,T_UpdateThreshold_PRIORITY, NULL );
 
     vTaskStartScheduler();
 
@@ -175,8 +213,21 @@ static void ISR_Init(void)
     IOWR_ALTERA_AVALON_PIO_EDGE_CAP(PUSH_BUTTON_BASE, 0x7);
     IOWR_ALTERA_AVALON_PIO_IRQ_MASK(PUSH_BUTTON_BASE, 0x7);
 
-    /* --- LEGACY REGISTRATION --- */
-    // Note: Legacy does not use the "Controller ID" parameter
+    //keyboard inits
+    alt_up_ps2_dev * ps2_device = alt_up_ps2_open_dev(PS2_NAME);
+
+    // check if device valid
+    if(ps2_device == NULL){
+        printf("can't find PS/2 device\n");
+        return;
+    }
+
+    //clears and registers device
+    alt_up_ps2_clear_fifo (ps2_device) ;
+    alt_irq_register(PS2_IRQ, ps2_device, ps2_isr);
+    // register the PS/2 interrupt
+    IOWR_8DIRECT(PS2_BASE,4,1);
+   
     alt_irq_register(PUSH_BUTTON_IRQ, (void*)&buttonValue, button_interrupts_function);
 }
 
@@ -222,6 +273,7 @@ static void T_FreqAndRoc(void *pvParameters)
 
 }
 
+// needs to use threshold queue and then take that to display
 static void T_VgaDisplay(void *pvParameters)
 {
     /* Use the correct struct type for the message */
@@ -412,6 +464,21 @@ static void T_LoadCtrl(void *pvParameters)
                 }
 
         	}
+        }
+    }
+
+}
+
+static void T_UpdateThreshold(void *pvParameters){
+    KeyMessage msg;
+
+    (void)pvParameters;
+
+    for(;;){
+        if(xQueueReceive(Q_keyPress, &msg, portMAX_DELAY) == pdPass){
+            switch(msg.ascii){
+                //cases for the keyboard presses
+            }
         }
     }
 
