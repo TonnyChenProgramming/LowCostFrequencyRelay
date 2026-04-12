@@ -18,6 +18,8 @@
 
 /* The parameters passed to the reg test tasks.  This is just done to check
  the parameter passing mechanism is working correctly. */
+
+
 #define LOW_FREQ_THRESHOLD 49.0;
 #define HIGH_ROC_THRESHOLD 1.0;
 #define SAMPLING_FREQ_HZ 16000.0
@@ -67,6 +69,7 @@ typedef struct
     double rocHzPerSec;
 } FreqRocMessage;
 
+//could make ints and then we just be changing the tenths, safer and less work than critical sections
 typedef struct
 {
     double thresholdFreqHz;
@@ -379,6 +382,8 @@ static void T_SwitchPolling(void *pvParameters)
 	  }
 }
 
+
+// needs to be altered to use the threshold frequency message from keyboard
 static void T_StabilityMonitor(void *pvParameters){
 	FreqRocMessage receivedMsg;
 	LoadCtrlMessage outMsg;
