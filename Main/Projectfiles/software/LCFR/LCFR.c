@@ -196,7 +196,7 @@ void KeyBoardISR(void* ps2_device, alt_u32 id){
 int main(void)
 {
     threshold.thresholdFreqHz = 49.0;
-    threshold.thresholdRocHzPerSec = 1.0;
+    threshold.thresholdRocHzPerSec = 5.0;
 
 	ISR_Init();
     /* --- Queue Initialization --- */
@@ -592,8 +592,8 @@ static void T_UpdateThreshold(void *pvParameters){
             if(threshold.thresholdRocHzPerSec < 0.1){
                 threshold.thresholdRocHzPerSec = 0.1;
             }
-            if(threshold.thresholdRocHzPerSec > 5.0){
-                threshold.thresholdRocHzPerSec = 5.0;
+            if(threshold.thresholdRocHzPerSec > 50.0){
+                threshold.thresholdRocHzPerSec = 50.0;
             }
         }
     }
