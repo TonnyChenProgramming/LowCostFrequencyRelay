@@ -554,24 +554,28 @@ static void T_UpdateThreshold(void *pvParameters){
                 taskENTER_CRITICAL();
                 threshold.thresholdFreqHz += 0.1;
                 taskEXIT_CRITICAL();
+                printf("Threshold Frequency is : %.2f" , threshold.thresholdFreqHz);
 
                 case 's':
                 case 'S':
                 taskENTER_CRITICAL();
                 threshold.thresholdFreqHz -= 0.1;
                 taskEXIT_CRITICAL();
+                printf("Threshold Frequency is : %.2f" , threshold.thresholdFreqHz);
 
                 case 'a':
                 case 'A':
                 taskENTER_CRITICAL();
                 threshold.thresholdRocHzPerSec -= 0.1;
                 taskEXIT_CRITICAL();
+                printf("Threshold RoC is : %.2f" , threshold.thresholdRocHzPerSec);
 
                 case 'd':
                 case 'D':
                 taskENTER_CRITICAL();
                 threshold.thresholdRocHzPerSec += 0.1;
                 taskEXIT_CRITICAL();
+                printf("Threshold RoC is : %.2f" , threshold.thresholdRocHzPerSec);
 
                 default:
                 break;
