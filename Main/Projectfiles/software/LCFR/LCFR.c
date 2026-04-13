@@ -45,6 +45,7 @@
 #define T_SwitchMode_PRIORITY			3
 #define T_UpdateThreshold_PRIORITY		3
 
+
 static void T_FreqAndRoc(void *pvParameters);
 static void T_VgaDisplay(void *pvParameters);
 static void T_SwitchPolling(void *pvParameters);
@@ -96,18 +97,27 @@ typedef struct
     char ascii;
 }KeyMessage;
 
+typedef struct
+{
+    uint8_t stability;
+}StabilityMessage;
+
 // system variables
 static QueueHandle_t Q_adcCount;
 static QueueHandle_t Q_newFreqToVGA;
 static QueueHandle_t Q_newFreqToMonitor;
 static QueueHandle_t Q_newLoadCtrl;
 static QueueHandle_t Q_keyPress;
+static QueueHandle_t Q_stabilityToVGA;
 
 enum mode {
 	MAINTENANCE,
 	LOAD_MANAGING
 };
+
 enum mode current_system_mode = LOAD_MANAGING;
+
+static ThresholdMessage threshold;
 
 void FreqAnalyserISR(void *context)
 {
@@ -185,6 +195,8 @@ void KeyBoardISR(void* ps2_device, alt_u32 id){
  */
 int main(void)
 {
+    threshold.thresholdFreqHz = 49.0;
+    threshold.thresholdRocHzPerSec = 1.0;
 
 	ISR_Init();
     /* --- Queue Initialization --- */
@@ -193,6 +205,7 @@ int main(void)
     Q_newFreqToMonitor = xQueueCreate(5, sizeof(FreqRocMessage));
     Q_newLoadCtrl = xQueueCreate(5, sizeof(LoadCtrlMessage));
     Q_keyPress = xQueueCreate(5, sizeof(KeyMessage));
+    Q_stabilityToVGA = xQueueCreate(5, sizeof(StabilityMessage));
 
     /* --- Task Creation --- */
     xTaskCreate(T_FreqAndRoc, "Logic", configMINIMAL_STACK_SIZE, NULL, T_FreqAndRoc_PRIORITY, NULL);
@@ -281,8 +294,17 @@ static void T_VgaDisplay(void *pvParameters)
 {
     /* Use the correct struct type for the message */
     FreqRocMessage receivedMsg; //frequencyHz, rocHzPerSec - both in queue
+    StabilityMessage stabilityMsg; // 0 stable, 1 unstable
 
-    //needs to implement printing of thresholds and stability -- needs to take from stability monitor
+    uint8_t currentStabilityState = 0;
+
+    //copy thresholds
+    double freqThreshold;
+    double rocThreshold;
+
+    char freqText[48];
+    char rocText[48];
+    char statusText[32];
 
     (void)pvParameters; // Prevent compiler warning for unused parameter
 
@@ -322,12 +344,14 @@ static void T_VgaDisplay(void *pvParameters)
     // roc axis unnecessary if underneath the frequency - just needs to showcase the changes
 
     //init buffers
-    double freq[100], ROCfreq[100];
+    double freq[100] = {0};
+    double ROCfreq[100] = {0};
 	int i = 0;
 	Line line_freq, line_roc;
 
     for (;;)
     {
+
         /* Listen to the Q_newFreqToVGA queue */
         if (xQueueReceive(Q_newFreqToVGA, &receivedMsg, portMAX_DELAY) == pdPASS) // frequency & ROC data has been received
         {
@@ -337,17 +361,50 @@ static void T_VgaDisplay(void *pvParameters)
             i = (i + 1) % 100;
         }
 
+        //drains all latest stability changes
+        while(xQueueReceive(Q_stabilityToVGA, &stabilityMsg, 0) == pdPASS){
+            currentStabilityState = stabilityMsg.stability;
+        }
+
+
+
+        // safely copies thresholds
+        taskENTER_CRITICAL();
+        freqThreshold = threshold.thresholdFreqHz;
+        rocThreshold = threshold.thresholdRocHzPerSec;
+        taskEXIT_CRITICAL();
+
         //clear old data
         alt_up_pixel_buffer_dma_draw_box(pixel_buf, 101, 0, 639, 199, 0, 0);
 		alt_up_pixel_buffer_dma_draw_box(pixel_buf, 101, 201, 639, 299, 0, 0);
 
+        // clear old text area by overwriting with spaces
+        alt_up_char_buffer_string(char_buf, "                                        ", 4, 34);
+        alt_up_char_buffer_string(char_buf, "                                        ", 4, 36);
+        alt_up_char_buffer_string(char_buf, "                                        ", 4, 38);
+
+        // formats latest text
+        snprintf(freqText, sizeof(freqText), "Frequency Threshold: %.1f Hz", freqThreshold);
+        snprintf(rocText, sizeof(rocText), "Rate of Change Threshold: %.1f Hz/s", rocThreshold);
+
+        if (currentStabilityState == 0) {
+            snprintf(statusText, sizeof(statusText), "Stability: Stable");
+        } else {
+            snprintf(statusText, sizeof(statusText), "Stability: Unstable");
+        }
+
+        // draws text
+        alt_up_char_buffer_string(char_buf, freqText, 4, 34);
+        alt_up_char_buffer_string(char_buf, rocText, 4, 36);
+        alt_up_char_buffer_string(char_buf, statusText, 4, 38);
+
         for(int j = 0; j < 99; j++){
             //Frequency plot
 				line_freq.x1 = FREQPLT_ORI_X + FREQPLT_GRID_SIZE_X * j;
-				line_freq.y1 = (int)(FREQPLT_ORI_Y - FREQPLT_FREQ_RES * (freq[(i+j)%100] - LOW_FREQ_THRESHOLD)); //plotting relative to 49.0 HZ
+				line_freq.y1 = (int)(FREQPLT_ORI_Y - FREQPLT_FREQ_RES * (freq[(i+j)%100] - freqThreshold)); //plotting relative to 49.0 HZ
 
 				line_freq.x2 = FREQPLT_ORI_X + FREQPLT_GRID_SIZE_X * (j + 1);
-				line_freq.y2 = (int)(FREQPLT_ORI_Y - FREQPLT_FREQ_RES * (freq[(i+j+1)%100] - LOW_FREQ_THRESHOLD));
+				line_freq.y2 = (int)(FREQPLT_ORI_Y - FREQPLT_FREQ_RES * (freq[(i+j+1)%100] - freqThreshold));
 
 				//Frequency RoC plot
                 //Shows distinct changes from the frequency, no relative value - same as figure 2
@@ -363,7 +420,6 @@ static void T_VgaDisplay(void *pvParameters)
         }
 
         vTaskDelay(pdMS_TO_TICKS(10));
-
 
     }
 }
@@ -387,6 +443,15 @@ static void T_SwitchPolling(void *pvParameters)
 static void T_StabilityMonitor(void *pvParameters){
 	FreqRocMessage receivedMsg;
 	LoadCtrlMessage outMsg;
+    StabilityMessage vgaMsg;
+
+    double freqThreshold, RocThreshold;
+
+    taskENTER_CRITICAL();
+    freqThreshold = threshold.thresholdFreqHz;
+    RocThreshold = threshold.thresholdRocHzPerSec;
+    taskEXIT_CRITICAL();
+
 
 	  for (;;)
 	  {
@@ -394,11 +459,13 @@ static void T_StabilityMonitor(void *pvParameters){
 		{
 			outMsg.producer_id = 1;
 			outMsg.stability_state = 0;
-			uint8_t low_freq_flag = receivedMsg.frequencyHz < (double )LOW_FREQ_THRESHOLD;
-			uint8_t high_roc_flag = fabs(receivedMsg.rocHzPerSec) > (double)HIGH_ROC_THRESHOLD;
+			uint8_t low_freq_flag = receivedMsg.frequencyHz < freqThreshold;
+			uint8_t high_roc_flag = fabs(receivedMsg.rocHzPerSec) > RocThreshold;
 			outMsg.stability_state = low_freq_flag | high_roc_flag;
+            vgaMsg.stability = outMsg.stability_state;
 
 			xQueueSendToBack(Q_newLoadCtrl, &outMsg, portMAX_DELAY);
+            xQueueSendToBack(Q_stabilityToVGA, &vgaMsg, portMAX_DELAY);
 		}
 	  }
 }
@@ -482,7 +549,47 @@ static void T_UpdateThreshold(void *pvParameters){
     for(;;){
         if(xQueueReceive(Q_keyPress, &msg, portMAX_DELAY) == pdPass){
             switch(msg.ascii){
+                case 'w':
+                case 'W':
+                taskENTER_CRITICAL();
+                threshold.thresholdFreqHz += 0.1;
+                taskEXIT_CRITICAL();
+
+                case 's':
+                case 'S':
+                taskENTER_CRITICAL();
+                threshold.thresholdFreqHz -= 0.1;
+                taskEXIT_CRITICAL();
+
+                case 'a':
+                case 'A':
+                taskENTER_CRITICAL();
+                threshold.thresholdRocHzPerSec -= 0.1;
+                taskEXIT_CRITICAL();
+
+                case 'd':
+                case 'D':
+                taskENTER_CRITICAL();
+                threshold.thresholdRocHzPerSec += 0.1;
+                taskEXIT_CRITICAL();
+
+                default:
+                break;
                 //cases for the keyboard presses
+            }
+
+            if(threshold.thresholdFreqHz < 45.0){
+                threshold.thresholdFreqHz = 45.0;
+            }
+            if(threshold.thresholdFreqHz > 50.0){
+                threshold.thresholdFreqHz = 50.0;
+            }
+
+            if(threshold.thresholdRocHzPerSec < 0.1){
+                threshold.thresholdRocHzPerSec = 0.1;
+            }
+            if(threshold.thresholdRocHzPerSec > 5.0){
+                threshold.thresholdRocHzPerSec = 5.0;
             }
         }
     }
