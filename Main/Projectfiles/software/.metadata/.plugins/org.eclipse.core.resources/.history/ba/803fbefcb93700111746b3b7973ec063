@@ -1,0 +1,876 @@
+/* Standard includes. */
+#include <stdio.h>
+#include <stdbool.h>
+#include <math.h>
+#include "system.h"
+#include "io.h"
+#include "altera_avalon_pio_regs.h"
+#include "sys/alt_irq.h"
+#include "altera_up_avalon_video_character_buffer_with_dma.h"
+#include "altera_up_avalon_video_pixel_buffer_dma.h"
+#include "altera_up_avalon_ps2.h"
+#include "altera_up_ps2_keyboard.h"
+
+/* Scheduler includes. */
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/queue.h"
+#include "FreeRTOS/timers.h"
+#include "freertos/semphr.h"
+
+/* The parameters passed to the reg test tasks.  This is just done to check
+ the parameter passing mechanism is working correctly. */
+#define LOW_FREQ_THRESHOLD 50.0
+#define HIGH_ROC_THRESHOLD 100.0
+#define SAMPLING_FREQ_HZ 16000.0
+#define MAXIMUM_LOAD_NUMBER 5
+#define PRODUCER_SWITCH    0
+#define PRODUCER_STABILITY 1
+#define PRODUCER_TIMER     2
+
+//For frequency plot
+#define FREQPLT_ORI_X 101		//x axis pixel position at the plot origin
+#define FREQPLT_GRID_SIZE_X 5	//pixel separation in the x axis between two data points
+#define FREQPLT_ORI_Y 199.0		//y axis pixel position at the plot origin
+#define FREQPLT_FREQ_RES 20.0	//number of pixels per Hz (y axis scale)
+
+#define ROCPLT_ORI_X 101
+#define ROCPLT_GRID_SIZE_X 5
+#define ROCPLT_ORI_Y 259.0
+#define ROCPLT_ROC_RES 0.5		//number of pixels per Hz/s (y axis scale)
+
+#define MIN_FREQ 45.0 //minimum frequency to draw
+
+
+#define T_FreqAndRoc_PRIORITY			4
+#define T_VgaDisplay_PRIORITY			3
+#define T_StabilityMonitor_PRIORITY		4
+#define T_SwitchPolling_PRIORITY		4
+#define T_LoadCtrl_PRIORITY				5
+#define T_RecordTimeDisplay_PRIORITY	2
+#define T_UpdateThreshold_PRIORITY		3
+#define T_UpdateLed_PRIORITY			3
+
+static void T_FreqAndRoc(void *pvParameters);
+static void T_VgaDisplay(void *pvParameters);
+static void T_SwitchPolling(void *pvParameters);
+static void T_LoadCtrl(void *pvParameters);
+static void T_StabilityMonitor(void *pvParameters);
+static void T_RecordTimeDisplay (void *pvParameters);
+static void T_UpdateThreshold (void *pvParameters);
+static void T_UpdateRedLed(void *pvParameters);
+static void T_UpdateGreenLed(void *pvParameters);
+static void ISR_Init(void);
+
+uint8_t addLowestPriorityShed(uint8_t userMask, uint8_t shedMask);
+uint8_t recoverHighestPriorityShed(uint8_t userMask, uint8_t shedMask);
+void updateRecordTime(uint16_t response_time);
+// structure declaration
+typedef struct
+{
+    unsigned int adcCount;
+} AdcCountMessage;
+
+typedef struct
+{
+    double frequencyHz;
+    double rocHzPerSec;
+} FreqRocMessage;
+
+typedef struct
+{
+    double thresholdFreqHz;
+    double thresholdRocHzPerSec;
+} ThresholdMessage;
+
+typedef	struct
+{
+	uint8_t producer_id; // 0- from T_SwitchPolling ; 1 = from T_StabilityMonitor ; 2 = from timer
+	uint8_t switch_state;
+	uint8_t stability_state; // 0 - stable ; 1 - unstable
+	uint8_t shed_or_recover; // 0 - invalid, 1 - shed, 2 - recover
+} LoadCtrlMessage;
+
+typedef struct
+{
+    unsigned int x1;
+	unsigned int y1;
+	unsigned int x2;
+	unsigned int y2;
+}Line;
+
+typedef struct
+{
+    char ascii;
+}KeyMessage;
+
+typedef struct
+{
+    uint8_t stability;
+}StabilityMessage;
+
+typedef struct
+{
+	uint16_t response_time_queue[5];
+	uint16_t minimum;
+	uint16_t maximum;
+	uint16_t average;
+}RecordMessage;
+
+// system variables
+static QueueHandle_t Q_adcCount;
+static QueueHandle_t Q_newFreqToVGA;
+static QueueHandle_t Q_newFreqToMonitor;
+static QueueHandle_t Q_newLoadCtrl;
+static QueueHandle_t Q_newRedLed;
+static QueueHandle_t Q_newGreenLed;
+static QueueHandle_t Q_keyPress;
+static QueueHandle_t Q_stabilityToVGA;
+
+static SemaphoreHandle_t shared_record_mutex;
+
+static TimerHandle_t xManageTimer;
+static TickType_t initial_tick;
+static TickType_t unstability_detected_tick;
+static uint16_t first_respond_time;
+static RecordMessage record_message;
+
+enum mode {
+	MAINTENANCE,
+	LOAD_MANAGING
+};
+
+enum mode current_system_mode = LOAD_MANAGING;
+static ThresholdMessage threshold;
+
+static uint8_t userLoadMask = 0;//used to represent user switch
+static uint8_t shedByRelayMask = 0; //used to represent the green lights under load managing state
+static uint8_t effectiveLoadMask = 0; //used to represent the red light under load managing state
+static uint8_t currentNetworkUnstable = 0;
+static uint8_t prevNetworkUnstable = 0;
+static uint8_t waitingForTimer = 0; // a flag to idicate the first shed
+static uint8_t current_action = 0; //0 - invalid, 1 - to shed, 2 - to recover
+void freq_relay_function(void *context)
+{
+    AdcCountMessage msg;
+
+    (void)context;
+
+    msg.adcCount = IORD(FREQUENCY_ANALYSER_BASE, 0);
+    xQueueSendToBackFromISR(Q_adcCount, &msg, NULL);
+}
+
+// push button to change modes
+void button_interrupts_function(void* context, alt_u32 id)
+{
+    // 1. Cast context (pointer to our buttonValue)
+    int* temp = (int*) context;
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    AdcCountMessage msg;
+
+    // 2. Read capture and Mimic Analyser
+    // We store the edge capture value into the context variable
+    *temp = IORD_ALTERA_AVALON_PIO_EDGE_CAP(PUSH_BUTTON_BASE);
+
+    // Mimic the Analyser: 320 count = 50Hz
+    msg.adcCount = 320;
+    //printf(".2%f", msg);
+
+    //enum to swap modes
+    if(current_system_mode == MAINTENANCE){
+    	current_system_mode = LOAD_MANAGING;
+    	printf("LOAD_MANAGING\n");
+    } else{
+    	current_system_mode = MAINTENANCE;
+    	printf("MAINTENANCE\n");
+    }
+
+
+    // 3. Send to Queue (Use FromISR version)
+    //xQueueSendToBackFromISR(Q_adcCount, &msg, &xHigherPriorityTaskWoken);
+
+    // 4. Clear the edge capture register so the interrupt doesn't re-fire
+    IOWR_ALTERA_AVALON_PIO_EDGE_CAP(PUSH_BUTTON_BASE, 0x7);
+
+    // 5. Context Switch: Tells FreeRTOS to check if a task is now ready
+    //portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
+void KeyBoardISR(void* ps2_device, alt_u32 id){
+    KeyMessage msg;
+    char ascii;
+    int status = 0;
+    unsigned char key = 0;
+    KB_CODE_TYPE decode_mode;
+    // BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+    status = decode_scancode (ps2_device, &decode_mode , &key , &ascii) ;
+
+    if(status != 0){
+        return;
+    }
+
+    if(decode_mode != KB_ASCII_MAKE_CODE){
+    	return;
+    }
+
+
+    msg.ascii = ascii;
+
+    xQueueSendToBackFromISR(Q_keyPress, &msg, NULL);
+
+   // portYIELD_FROM_ISR(xHigherPriorityTaskWoken); // forces priority on the threshold updater
+
+}
+
+void vTimerCallback(xTimerHandle t_timer){
+	printf("enterrrrrrrrrrrrr\n");
+    LoadCtrlMessage outMsg = {2, 0, 0, 0};
+
+    if (currentNetworkUnstable)
+    {
+        outMsg.shed_or_recover = 1;   // shed
+        xQueueSendToBack(Q_newLoadCtrl, &outMsg, 0);
+    }
+    else
+    {
+        outMsg.shed_or_recover = 2;   // recover
+        xQueueSendToBack(Q_newLoadCtrl, &outMsg, 0);
+    }
+}
+
+/*
+ * Create the demo tasks then start the scheduler.
+ */
+int main(void)
+{
+	//initial system
+	initial_tick = xTaskGetTickCount();
+	// initialise threshold values
+	 threshold.thresholdFreqHz = 49.0;
+	 threshold.thresholdRocHzPerSec = 8.0;
+
+	// reset all leds
+	IOWR_ALTERA_AVALON_PIO_DATA(GREEN_LEDS_BASE, 0x0);
+	IOWR_ALTERA_AVALON_PIO_DATA(RED_LEDS_BASE, 0x0);
+
+	ISR_Init();
+    /* --- Queue Initialization --- */
+    Q_adcCount = xQueueCreate(5, sizeof(AdcCountMessage));
+    Q_newFreqToVGA = xQueueCreate(5, sizeof(FreqRocMessage));
+    Q_newFreqToMonitor = xQueueCreate(5, sizeof(FreqRocMessage));
+    Q_newLoadCtrl = xQueueCreate(10, sizeof(LoadCtrlMessage));
+    Q_newRedLed = xQueueCreate(5,sizeof(uint8_t));
+    Q_newGreenLed = xQueueCreate(5,sizeof(uint8_t));
+    Q_keyPress = xQueueCreate(5, sizeof(KeyMessage));
+    Q_stabilityToVGA = xQueueCreate(5, sizeof(StabilityMessage));
+
+    //semaphore initialization
+    shared_record_mutex = xSemaphoreCreateCounting( 99, 1 );
+    record_message.response_time_queue[0] = 0;
+    record_message.response_time_queue[1] = 0;
+    record_message.response_time_queue[2] = 0;
+    record_message.response_time_queue[3] = 0;
+    record_message.response_time_queue[4] = 0;
+    record_message.maximum = 0;
+    record_message.minimum = 1000;
+    record_message.average = 0;
+    /* --- Task Creation --- */
+    xTaskCreate(T_FreqAndRoc, "Logic", configMINIMAL_STACK_SIZE, NULL, T_FreqAndRoc_PRIORITY, NULL);
+    xTaskCreate(T_VgaDisplay, "Print", configMINIMAL_STACK_SIZE, NULL, T_VgaDisplay_PRIORITY, NULL);
+    xTaskCreate(T_SwitchPolling, "Logic", configMINIMAL_STACK_SIZE, NULL, T_SwitchPolling_PRIORITY, NULL);
+    xTaskCreate(T_StabilityMonitor, "Logic", configMINIMAL_STACK_SIZE, NULL,T_StabilityMonitor_PRIORITY, NULL);
+    xTaskCreate(T_LoadCtrl, "Logic", configMINIMAL_STACK_SIZE, NULL,T_LoadCtrl_PRIORITY, NULL);
+    xTaskCreate(T_UpdateRedLed, "Print", configMINIMAL_STACK_SIZE, NULL,T_UpdateLed_PRIORITY, NULL);
+    xTaskCreate(T_UpdateGreenLed, "Print", configMINIMAL_STACK_SIZE, NULL,T_UpdateLed_PRIORITY, NULL);
+    xTaskCreate(T_UpdateThreshold, "Logic", configMINIMAL_STACK_SIZE, NULL,T_UpdateThreshold_PRIORITY, NULL );
+
+    vTaskStartScheduler();
+
+    for (;;);
+}
+
+static void ISR_Init(void)
+{
+    static int buttonValue = 0;
+    /* --- Hardware Interrupt Setup --- */
+    // initialise push button isr
+    IOWR_ALTERA_AVALON_PIO_EDGE_CAP(PUSH_BUTTON_BASE, 0x7);
+    IOWR_ALTERA_AVALON_PIO_IRQ_MASK(PUSH_BUTTON_BASE, 0x7);
+    alt_irq_register(PUSH_BUTTON_IRQ, (void*)&buttonValue, button_interrupts_function);
+
+    //initialise 500 ms timer isr
+    xManageTimer = xTimerCreate("500msTimer", pdMS_TO_TICKS(500), pdTRUE, NULL, vTimerCallback);
+
+    //keyboard initialise
+        alt_up_ps2_dev * ps2_device = alt_up_ps2_open_dev(PS2_NAME);
+
+        // check if device valid
+        if(ps2_device == NULL){
+            printf("can't find PS/2 device\n");
+            return;
+        }
+
+        //clears and registers device
+        alt_up_ps2_clear_fifo (ps2_device) ;
+        alt_irq_register(PS2_IRQ, ps2_device, KeyBoardISR);
+        // register the PS/2 interrupt
+        IOWR_8DIRECT(PS2_BASE,4,1);
+
+    //initialise frequency analyser isr
+    alt_irq_register(FREQUENCY_ANALYSER_IRQ, 0, freq_relay_function);
+}
+
+static void T_FreqAndRoc(void *pvParameters)
+{
+
+    AdcCountMessage inMsg;
+    FreqRocMessage outMsg;
+    double prevFreq = 0.0;
+    bool first = true;
+
+    (void)pvParameters;
+
+    for (;;)
+    {
+        if (xQueueReceive(Q_adcCount, &inMsg, portMAX_DELAY) == pdPASS)
+        {
+            if (inMsg.adcCount == 0)
+            {
+                continue;
+            }
+            //printf("    task1 activated");
+
+            outMsg.frequencyHz = SAMPLING_FREQ_HZ / (double)inMsg.adcCount;
+
+            if (first)
+            {
+                outMsg.rocHzPerSec = 0.0;
+                first = false;
+            }
+            else
+            {
+                double deltaT = (double)inMsg.adcCount / SAMPLING_FREQ_HZ;
+                outMsg.rocHzPerSec = (outMsg.frequencyHz - prevFreq) / deltaT;
+            }
+
+            prevFreq = outMsg.frequencyHz;
+
+            xQueueSendToBack(Q_newFreqToVGA, &outMsg, portMAX_DELAY);
+            xQueueSendToBack(Q_newFreqToMonitor, &outMsg, portMAX_DELAY);
+        }
+    }
+
+}
+
+static void T_VgaDisplay(void *pvParameters)
+{
+    /* Use the correct struct type for the message */
+    FreqRocMessage receivedMsg; //frequencyHz, rocHzPerSec - both in queue
+    StabilityMessage stabilityMsg; // 0 stable, 1 unstable
+    RecordMessage recordMessageCopy; //statistics
+    uint16_t currentTimeRunning;
+
+
+    uint8_t currentStabilityState = 0;
+
+    //copy thresholds
+    double freqThreshold;
+    double rocThreshold;
+
+
+
+    char freqText[48];
+    char rocText[48];
+    char statusText[32];
+    char averageText[48];
+    char maximumText[48];
+    char minimumText[48];
+    char arrayText[48];
+    char timeText[48];
+
+    (void)pvParameters; // Prevent compiler warning for unused parameter
+
+    //initialize VGA controllers
+	alt_up_pixel_buffer_dma_dev *pixel_buf;
+	pixel_buf = alt_up_pixel_buffer_dma_open_dev(VIDEO_PIXEL_BUFFER_DMA_NAME);
+	if(pixel_buf == NULL){
+		printf("can't find pixel buffer device\n");
+	}
+
+	alt_up_pixel_buffer_dma_clear_screen(pixel_buf, 0);
+
+	alt_up_char_buffer_dev *char_buf;
+	char_buf = alt_up_char_buffer_open_dev("/dev/video_character_buffer_with_dma");
+	if(char_buf == NULL){
+		printf("can't find char buffer device\n");
+	}
+
+	alt_up_char_buffer_clear(char_buf);
+
+	//Set up plot axes
+	alt_up_pixel_buffer_dma_draw_hline(pixel_buf, 100, 590, 200, ((0x3ff << 20) + (0x3ff << 10) + (0x3ff)), 0);
+	alt_up_pixel_buffer_dma_draw_hline(pixel_buf, 100, 590, 300, ((0x3ff << 20) + (0x3ff << 10) + (0x3ff)), 0);
+	alt_up_pixel_buffer_dma_draw_vline(pixel_buf, 100, 50, 200, ((0x3ff << 20) + (0x3ff << 10) + (0x3ff)), 0);
+	alt_up_pixel_buffer_dma_draw_vline(pixel_buf, 100, 220, 300, ((0x3ff << 20) + (0x3ff << 10) + (0x3ff)), 0);
+
+    // frequency header
+    alt_up_char_buffer_string(char_buf, "Frequency(Hz)", 4, 4);
+    // frequency plot axis
+    alt_up_char_buffer_string(char_buf, "52", 10, 7);
+	alt_up_char_buffer_string(char_buf, "50", 10, 12);
+	alt_up_char_buffer_string(char_buf, "48", 10, 17);
+	alt_up_char_buffer_string(char_buf, "46", 10, 22);
+
+    //roc header
+    alt_up_char_buffer_string(char_buf, "df/dt(Hz/s)", 4, 26);
+    // roc axis unnecessary if underneath the frequency - just needs to showcase the changes
+
+    //time header
+    alt_up_char_buffer_string(char_buf, "t", 75, 26);
+    alt_up_char_buffer_string(char_buf, "t", 75, 38);
+
+    //init buffers
+    double freq[100] = {0};
+    double ROCfreq[100] = {0};
+	int i = 0;
+	Line line_freq, line_roc;
+
+    for (;;)
+    {
+
+        /* Listen to the Q_newFreqToVGA queue */
+        if (xQueueReceive(Q_newFreqToVGA, &receivedMsg, portMAX_DELAY) == pdPASS) // frequency & ROC data has been received
+        {
+            // fills buffers with data
+            freq[i] = receivedMsg.frequencyHz;
+            ROCfreq[i] = receivedMsg.rocHzPerSec;
+            i = (i + 1) % 100;
+        }
+
+        //drains all latest stability changes
+        while(xQueueReceive(Q_stabilityToVGA, &stabilityMsg, 0) == pdPASS){
+            currentStabilityState = stabilityMsg.stability;
+        }
+
+        // copies timing records for display
+        if (xSemaphoreTake(shared_record_mutex,portMAX_DELAY) == pdPASS)
+            	{
+            		recordMessageCopy.average = record_message.average;
+            		recordMessageCopy.maximum = record_message.maximum;
+            		recordMessageCopy.minimum =record_message.minimum;
+            		for(int i = 0; i < 5; i++){
+            			recordMessageCopy.response_time_queue[i] = record_message.response_time_queue[i];
+            		}
+            	}
+            currentTimeRunning = (uint16_t)((xTaskGetTickCount() - initial_tick) * portTICK_PERIOD_MS/1000);
+
+
+
+        // safely copies thresholds
+        taskENTER_CRITICAL();
+        freqThreshold = threshold.thresholdFreqHz;
+        rocThreshold = threshold.thresholdRocHzPerSec;
+        taskEXIT_CRITICAL();
+
+        //clear old data
+        alt_up_pixel_buffer_dma_draw_box(pixel_buf, 101, 0, 639, 199, 0, 0);
+		alt_up_pixel_buffer_dma_draw_box(pixel_buf, 101, 201, 639, 299, 0, 0);
+
+        // clear old text area by overwriting with spaces
+        alt_up_char_buffer_string(char_buf, "                                        ", 4, 40);
+        alt_up_char_buffer_string(char_buf, "                                        ", 4, 42);
+        alt_up_char_buffer_string(char_buf, "                                        ", 4, 44);
+
+        // formats latest text
+        snprintf(freqText, sizeof(freqText), "Frequency Threshold: %.1f Hz", freqThreshold);
+        snprintf(rocText, sizeof(rocText), "Rate of Change Threshold: %.1f Hz/s", rocThreshold);
+
+        if (currentStabilityState == 0) {
+            snprintf(statusText, sizeof(statusText), "Stability: Stable");
+        } else {
+            snprintf(statusText, sizeof(statusText), "Stability: Unstable");
+        }
+
+        // draws text
+        alt_up_char_buffer_string(char_buf, freqText, 4, 40);
+        alt_up_char_buffer_string(char_buf, rocText, 4, 42);
+        alt_up_char_buffer_string(char_buf, statusText, 4, 44);
+
+        //clear space for record statistics
+        alt_up_char_buffer_string(char_buf, "                                        ", 4, 46);
+        alt_up_char_buffer_string(char_buf, "                                        ", 4, 48);
+        alt_up_char_buffer_string(char_buf, "                                        ", 4, 50);
+        alt_up_char_buffer_string(char_buf, "                                        ", 4, 52);
+        alt_up_char_buffer_string(char_buf, "                                        ", 4, 5);
+
+        //averageText[48];
+           // char maximumText[48];
+            //char minimumText[48];
+           // char arrayText[48];
+        snprintf(averageText, sizeof(averageText), "Average Frequency: %.1d Hz", recordMessageCopy.average);
+        snprintf(maximumText, sizeof(maximumText), "Maximum Frequency: %.1d Hz", recordMessageCopy.maximum);
+        snprintf(minimumText, sizeof(minimumText), "Minimum Frequency: %.1d Hz", recordMessageCopy.minimum);
+
+        for(int i =0; i < 5; i++){
+        	snprintf(arrayText, sizeof(arrayText), "Frequency: %.1d Hz", recordMessageCopy.response_time_queue[i]);
+        }
+
+        snprintf(timeText, sizeof(timeText), "Elasped Runtime: %.1d s", currentTimeRunning);
+
+        alt_up_char_buffer_string(char_buf, arrayText, 4, 46);
+        alt_up_char_buffer_string(char_buf, maximumText, 4, 48);
+        alt_up_char_buffer_string(char_buf, minimumText, 4, 50);
+        alt_up_char_buffer_string(char_buf, averageText, 4, 52);
+        alt_up_char_buffer_string(char_buf, timeText, 4, 54);
+
+
+
+
+        for(int j = 0; j < 99; j++){
+            //Frequency plot
+				line_freq.x1 = FREQPLT_ORI_X + FREQPLT_GRID_SIZE_X * j;
+				line_freq.y1 = (int)(FREQPLT_ORI_Y - FREQPLT_FREQ_RES * (freq[(i+j)%100]- MIN_FREQ)); //plotting relative to minimum axis
+
+				line_freq.x2 = FREQPLT_ORI_X + FREQPLT_GRID_SIZE_X * (j + 1);
+				line_freq.y2 = (int)(FREQPLT_ORI_Y - FREQPLT_FREQ_RES * (freq[(i+j+1)%100]- MIN_FREQ));
+
+				//Frequency RoC plot
+                //Shows distinct changes from the frequency, no relative value - same as figure 2
+				line_roc.x1 = ROCPLT_ORI_X + ROCPLT_GRID_SIZE_X * j;
+				line_roc.y1 = (int)(ROCPLT_ORI_Y - ROCPLT_ROC_RES * ROCfreq[(i+j)%100]);
+
+				line_roc.x2 = ROCPLT_ORI_X + ROCPLT_GRID_SIZE_X * (j + 1);
+				line_roc.y2 = (int)(ROCPLT_ORI_Y - ROCPLT_ROC_RES * ROCfreq[(i+j+1)%100]);
+
+				//Draw lines guarded by borders
+				if(line_roc.y1 >=201 && line_roc.y1 <= 299 && line_roc.y2 >=201 && line_roc.y2 <= 299){
+					alt_up_pixel_buffer_dma_draw_line(pixel_buf, line_roc.x1, line_roc.y1, line_roc.x2, line_roc.y2, 0x3ff << 0, 0);
+				}
+
+				if(line_freq.y1 >=0 && line_freq.y1 <= 199 && line_freq.y2 >=0 && line_freq.y2 <= 199){
+					alt_up_pixel_buffer_dma_draw_line(pixel_buf, line_freq.x1, line_freq.y1, line_freq.x2, line_freq.y2, 0x3ff << 0, 0);
+				}
+
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(10));
+
+    }
+}
+
+static void T_SwitchPolling(void *pvParameters)
+{
+	  unsigned int uiSwitchValue = 0;
+	  LoadCtrlMessage outMsg;
+	  for (;;)
+	  {
+		   uiSwitchValue = IORD_ALTERA_AVALON_PIO_DATA(SLIDE_SWITCH_BASE);
+		   outMsg.producer_id = 0;
+		   outMsg.switch_state = (uint8_t)uiSwitchValue;
+		   outMsg.shed_or_recover = 0;
+		   xQueueSendToBack(Q_newLoadCtrl, &outMsg, portMAX_DELAY);
+		   vTaskDelay(pdMS_TO_TICKS(1000));
+	  }
+}
+
+static void T_StabilityMonitor(void *pvParameters){
+	FreqRocMessage receivedMsg;
+	LoadCtrlMessage outMsg;
+    StabilityMessage vgaMsg;
+
+    double freqThreshold, RocThreshold;
+
+    taskENTER_CRITICAL();
+    freqThreshold = threshold.thresholdFreqHz;
+    RocThreshold = threshold.thresholdRocHzPerSec;
+    taskEXIT_CRITICAL();
+
+
+	  for (;;)
+	  {
+		if (xQueueReceive(Q_newFreqToMonitor, &receivedMsg, portMAX_DELAY) == pdPASS)
+		{
+			outMsg.producer_id = 1;
+			outMsg.stability_state = 0;
+			uint8_t low_freq_flag = receivedMsg.frequencyHz < freqThreshold;
+			uint8_t high_roc_flag = fabs(receivedMsg.rocHzPerSec) > RocThreshold;
+			outMsg.stability_state = low_freq_flag | high_roc_flag;
+            vgaMsg.stability = outMsg.stability_state;
+            if (outMsg.stability_state & !waitingForTimer)
+            {
+            	unstability_detected_tick = xTaskGetTickCount();
+            }
+			xQueueSendToBack(Q_newLoadCtrl, &outMsg, portMAX_DELAY);
+            xQueueSendToBack(Q_stabilityToVGA, &vgaMsg, portMAX_DELAY);
+		}
+	  }
+}
+
+
+
+static void T_LoadCtrl(void *pvParameters)
+{
+    LoadCtrlMessage receivedMsg;
+
+    (void) pvParameters;
+
+    uint8_t oldEffective = 0;
+    uint8_t newEffective = 0;
+    for (;;)
+    {
+        if (xQueueReceive(Q_newLoadCtrl, &receivedMsg, portMAX_DELAY) == pdPASS)
+        {
+            if (receivedMsg.producer_id == 0)
+            {
+                uint8_t newMask = receivedMsg.switch_state & 0x1F;
+
+                if (current_system_mode == LOAD_MANAGING)
+                {
+                    if (userLoadMask == 0 && shedByRelayMask == 0)
+                    {
+                        userLoadMask = newMask;
+                    }
+                    else
+                    {
+                        userLoadMask = userLoadMask & newMask;
+                    }
+                }
+                else
+                {
+                    userLoadMask = newMask;
+                }
+            }
+            else if (receivedMsg.producer_id == 1)
+            {
+                currentNetworkUnstable = receivedMsg.stability_state;
+            }
+            else if (receivedMsg.producer_id == 2)
+            {
+                current_action = receivedMsg.shed_or_recover;
+            }
+
+            if (current_system_mode == MAINTENANCE)
+            {
+                xTimerStop(xManageTimer, 0);
+                waitingForTimer = 0;
+                shedByRelayMask = 0;
+                effectiveLoadMask = userLoadMask & 0x1F;
+                uint8_t greenMask = 0;
+
+                xQueueSendToBack(Q_newRedLed, &effectiveLoadMask, portMAX_DELAY);
+                xQueueSendToBack(Q_newGreenLed, &greenMask, portMAX_DELAY);
+            }
+            else if (current_system_mode == LOAD_MANAGING)
+            {
+                if (receivedMsg.producer_id == 1)
+                {
+                    if (prevNetworkUnstable != currentNetworkUnstable)
+                    {
+                        if (currentNetworkUnstable && !waitingForTimer)
+                        {
+                            oldEffective = userLoadMask & (~shedByRelayMask) & 0x1F;
+                            shedByRelayMask = addLowestPriorityShed(userLoadMask, shedByRelayMask);
+                            newEffective = userLoadMask & (~shedByRelayMask) & 0x1F;
+
+                            if (oldEffective != newEffective)
+                            {
+                                xTimerReset(xManageTimer, 0);
+                                waitingForTimer = 1;
+                                first_respond_time = (uint16_t)((xTaskGetTickCount() - unstability_detected_tick) * portTICK_PERIOD_MS);
+                                updateRecordTime(first_respond_time);
+                            }
+                        }
+                        else
+                        {
+                            xTimerReset(xManageTimer, 0);
+                            waitingForTimer = 1;
+                        }
+
+                        prevNetworkUnstable = currentNetworkUnstable;
+                    }
+                }
+                else if (receivedMsg.producer_id == 2)
+                {
+                    if (current_action == 1)
+                    {
+                        oldEffective = userLoadMask & (~shedByRelayMask) & 0x1F;
+                        shedByRelayMask = addLowestPriorityShed(userLoadMask, shedByRelayMask);
+                        newEffective = userLoadMask & (~shedByRelayMask) & 0x1F;
+
+                        if (oldEffective != newEffective) {
+                            xTimerReset(xManageTimer, 0);
+                            waitingForTimer = 1;
+                        } else {
+                            xTimerStop(xManageTimer, 0);
+                            waitingForTimer = 0;
+                        }
+                    }
+                    else if (current_action == 2)
+                    {
+                        uint8_t oldShed = shedByRelayMask;
+                        shedByRelayMask = recoverHighestPriorityShed(userLoadMask, shedByRelayMask);
+
+                        if (oldShed != shedByRelayMask) {
+                            if ((shedByRelayMask & userLoadMask) != 0) {
+                                xTimerReset(xManageTimer, 0);
+                                waitingForTimer = 1;
+                            } else {
+                                xTimerStop(xManageTimer, 0);
+                                waitingForTimer = 0;
+                            }
+                        } else {
+                            xTimerStop(xManageTimer, 0);
+                            waitingForTimer = 0;
+                        }
+                    }
+                }
+
+                effectiveLoadMask = userLoadMask & (~shedByRelayMask) & 0x1F;
+                uint8_t greenMask = shedByRelayMask & userLoadMask;
+
+                xQueueSendToBack(Q_newRedLed, &effectiveLoadMask, portMAX_DELAY);
+                xQueueSendToBack(Q_newGreenLed, &greenMask, portMAX_DELAY);
+            }
+        }
+    }
+}
+static void T_UpdateRedLed(void *pvParameters)
+{
+	uint8_t receivedMsg;
+	for(;;)
+	{
+		if (xQueueReceive(Q_newRedLed, &receivedMsg, portMAX_DELAY) == pdPASS)
+		{
+            IOWR_ALTERA_AVALON_PIO_DATA(RED_LEDS_BASE, receivedMsg);
+
+		}
+	}
+
+}
+static void T_UpdateGreenLed(void *pvParameters)
+{
+	uint8_t receivedMsg;
+	for(;;)
+	{
+		if (xQueueReceive(Q_newGreenLed, &receivedMsg, portMAX_DELAY) == pdPASS)
+		{
+            IOWR_ALTERA_AVALON_PIO_DATA(GREEN_LEDS_BASE, receivedMsg);
+		}
+	}
+}
+
+static void T_UpdateThreshold(void *pvParameters){
+    KeyMessage msg;
+
+    (void)pvParameters;
+
+    for(;;){
+        if(xQueueReceive(Q_keyPress, &msg, portMAX_DELAY) == pdPASS){
+            switch(msg.ascii){
+                case 'w':
+                case 'W':
+                taskENTER_CRITICAL();
+                threshold.thresholdFreqHz += 0.1;
+                taskEXIT_CRITICAL();
+                printf("Threshold Frequency is : %.2f " , threshold.thresholdFreqHz);
+                break;
+
+                case 's':
+                case 'S':
+                taskENTER_CRITICAL();
+                threshold.thresholdFreqHz -= 0.1;
+                taskEXIT_CRITICAL();
+                printf("Threshold Frequency is : %.2f " , threshold.thresholdFreqHz);
+                break;
+
+                case 'a':
+                case 'A':
+                taskENTER_CRITICAL();
+                threshold.thresholdRocHzPerSec -= 0.1;
+                taskEXIT_CRITICAL();
+                printf("Threshold RoC is : %.2f " , threshold.thresholdRocHzPerSec);
+                break;
+
+                case 'd':
+                case 'D':
+                taskENTER_CRITICAL();
+                threshold.thresholdRocHzPerSec += 0.1;
+                taskEXIT_CRITICAL();
+                printf("Threshold RoC is : %.2f " , threshold.thresholdRocHzPerSec);
+                break;
+
+                default:
+                break;
+                //cases for the keyboard presses
+            }
+
+            taskENTER_CRITICAL();
+            if(threshold.thresholdFreqHz < 45.0){
+                threshold.thresholdFreqHz = 45.0;
+            }
+            if(threshold.thresholdFreqHz > 50.0){
+                threshold.thresholdFreqHz = 50.0;
+            }
+
+            if(threshold.thresholdRocHzPerSec < 0.1){
+                threshold.thresholdRocHzPerSec = 0.1;
+            }
+            if(threshold.thresholdRocHzPerSec > 50.0){
+                threshold.thresholdRocHzPerSec = 50.0;
+            }
+            taskEXIT_CRITICAL();
+        }
+    }
+
+}
+
+uint8_t addLowestPriorityShed(uint8_t userMask, uint8_t shedMask)
+{
+    uint8_t effective = userMask & (~shedMask) & 0x1F;
+
+    for (uint8_t i = 0; i < MAXIMUM_LOAD_NUMBER; i++)
+    {
+        if (effective & (1 << i))
+        {
+            shedMask |= (1 << i);
+            break;
+        }
+    }
+    return shedMask;
+}
+uint8_t recoverHighestPriorityShed(uint8_t userMask, uint8_t shedMask)
+{
+    for (int8_t i = MAXIMUM_LOAD_NUMBER - 1; i >= 0; i--)
+    {
+        if ((shedMask & (1 << i)) && (userMask & (1 << i)))
+        {
+            shedMask &= ~(1 << i);
+            break;
+        }
+    }
+    return shedMask;
+}
+void updateRecordTime(uint16_t response_time)
+{
+	uint16_t sum;
+	if (xSemaphoreTake(shared_record_mutex,portMAX_DELAY) == pdPASS)
+	{
+
+		//update lateset array
+		for (uint8_t counter = 4; counter>0 ; counter--)
+		{
+			record_message.response_time_queue[counter] = record_message.response_time_queue[counter-1];
+		}
+		record_message.response_time_queue[0] = response_time;
+		//calculate value
+		sum = 0;
+		for (uint8_t counter = 0; counter<5 ; counter++)
+		{
+			record_message.maximum = (record_message.maximum <record_message.response_time_queue[counter])? record_message.response_time_queue[counter]:record_message.maximum;
+			record_message.minimum = (record_message.minimum <record_message.response_time_queue[counter])? record_message.minimum:record_message.response_time_queue[counter];
+			sum+= record_message.response_time_queue[counter];
+		}
+		record_message.average = sum/5;
+	}
+}

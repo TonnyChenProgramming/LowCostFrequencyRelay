@@ -7,6 +7,7 @@ obj/default/LCFR.o: LCFR.c ../LCFR_bsp/system.h ../LCFR_bsp/linker.h \
  ../LCFR_bsp//drivers/inc/altera_up_avalon_video_character_buffer_with_dma.h \
  ../LCFR_bsp//HAL/inc/sys/alt_dev.h ../LCFR_bsp//HAL/inc/sys/alt_llist.h \
  ../LCFR_bsp//HAL/inc/priv/alt_dev_llist.h \
+ ../LCFR_bsp//drivers/inc/altera_avalon_timer_regs.h \
  ../LCFR_bsp//drivers/inc/altera_up_avalon_video_pixel_buffer_dma.h \
  ../LCFR_bsp//drivers/inc/altera_up_avalon_ps2.h \
  ../LCFR_bsp//drivers/inc/altera_up_ps2_keyboard.h \
@@ -14,7 +15,7 @@ obj/default/LCFR.o: LCFR.c ../LCFR_bsp/system.h ../LCFR_bsp/linker.h \
  freertos/FreeRTOSConfig.h freertos/projdefs.h freertos/portable.h \
  freertos/deprecated_definitions.h freertos/portmacro.h \
  freertos/mpu_wrappers.h freertos/task.h freertos/list.h freertos/queue.h \
- FreeRTOS/timers.h FreeRTOS/task.h
+ FreeRTOS/timers.h FreeRTOS/task.h freertos/semphr.h freertos/queue.h
 
 ../LCFR_bsp/system.h:
 
@@ -41,6 +42,8 @@ obj/default/LCFR.o: LCFR.c ../LCFR_bsp/system.h ../LCFR_bsp/linker.h \
 ../LCFR_bsp//HAL/inc/sys/alt_llist.h:
 
 ../LCFR_bsp//HAL/inc/priv/alt_dev_llist.h:
+
+../LCFR_bsp//drivers/inc/altera_avalon_timer_regs.h:
 
 ../LCFR_bsp//drivers/inc/altera_up_avalon_video_pixel_buffer_dma.h:
 
@@ -73,3 +76,7 @@ freertos/queue.h:
 FreeRTOS/timers.h:
 
 FreeRTOS/task.h:
+
+freertos/semphr.h:
+
+freertos/queue.h:

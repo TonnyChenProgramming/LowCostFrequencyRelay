@@ -7,6 +7,7 @@
 #include "altera_avalon_pio_regs.h"
 #include "sys/alt_irq.h"
 #include "altera_up_avalon_video_character_buffer_with_dma.h"
+#include "altera_avalon_timer_regs.h"
 #include "altera_up_avalon_video_pixel_buffer_dma.h"
 #include "altera_up_avalon_ps2.h"
 #include "altera_up_ps2_keyboard.h"
@@ -16,6 +17,7 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "FreeRTOS/timers.h"
+#include "freertos/semphr.h"
 
 /* The parameters passed to the reg test tasks.  This is just done to check
  the parameter passing mechanism is working correctly. */
@@ -60,9 +62,11 @@ static void T_UpdateThreshold (void *pvParameters);
 static void T_UpdateRedLed(void *pvParameters);
 static void T_UpdateGreenLed(void *pvParameters);
 static void ISR_Init(void);
+static void Timer_Init(void);
 
 uint8_t addLowestPriorityShed(uint8_t userMask, uint8_t shedMask);
 uint8_t recoverHighestPriorityShed(uint8_t userMask, uint8_t shedMask);
+void updateRecordTime(uint16_t response_time);
 // structure declaration
 typedef struct
 {
@@ -107,6 +111,13 @@ typedef struct
     uint8_t stability;
 }StabilityMessage;
 
+typedef struct
+{
+	uint16_t response_time_queue[5];
+	uint16_t minimum;
+	uint16_t maximum;
+	uint16_t average;
+}RecordMessage;
 
 // system variables
 static QueueHandle_t Q_adcCount;
@@ -118,7 +129,14 @@ static QueueHandle_t Q_newGreenLed;
 static QueueHandle_t Q_keyPress;
 static QueueHandle_t Q_stabilityToVGA;
 
+static SemaphoreHandle_t shared_record_mutex;
+
 static TimerHandle_t xManageTimer;
+
+
+static TickType_t initial_tick;
+static uint16_t first_respond_time;
+static RecordMessage record_message;
 
 enum mode {
 	MAINTENANCE,
@@ -229,6 +247,7 @@ void vTimerCallback(xTimerHandle t_timer){
  */
 int main(void)
 {
+	initial_tick = xTaskGetTickCount();
 	// initialise threshold values
 	 threshold.thresholdFreqHz = 49.0;
 	 threshold.thresholdRocHzPerSec = 8.0;
@@ -238,6 +257,7 @@ int main(void)
 	IOWR_ALTERA_AVALON_PIO_DATA(RED_LEDS_BASE, 0x0);
 
 	ISR_Init();
+	Timer_Init();
     /* --- Queue Initialization --- */
     Q_adcCount = xQueueCreate(5, sizeof(AdcCountMessage));
     Q_newFreqToVGA = xQueueCreate(5, sizeof(FreqRocMessage));
@@ -247,6 +267,17 @@ int main(void)
     Q_newGreenLed = xQueueCreate(5,sizeof(uint8_t));
     Q_keyPress = xQueueCreate(5, sizeof(KeyMessage));
     Q_stabilityToVGA = xQueueCreate(5, sizeof(StabilityMessage));
+
+    //semaphore initialization
+    shared_record_mutex = xSemaphoreCreateCounting( 99, 1 );
+    record_message.response_time_queue[0] = 0;
+    record_message.response_time_queue[1] = 0;
+    record_message.response_time_queue[2] = 0;
+    record_message.response_time_queue[3] = 0;
+    record_message.response_time_queue[4] = 0;
+    record_message.maximum = 0;
+    record_message.minimum = 1000;
+    record_message.average = 0;
     /* --- Task Creation --- */
     xTaskCreate(T_FreqAndRoc, "Logic", configMINIMAL_STACK_SIZE, NULL, T_FreqAndRoc_PRIORITY, NULL);
     xTaskCreate(T_VgaDisplay, "Print", configMINIMAL_STACK_SIZE, NULL, T_VgaDisplay_PRIORITY, NULL);
@@ -261,7 +292,13 @@ int main(void)
 
     for (;;);
 }
-
+static void Timer_Init(void)
+{
+	IOWR_ALTERA_AVALON_TIMER_CONTROL(TIMER1US_BASE,0);
+	IOWR_ALTERA_AVALON_TIMER_STATUS(TIMER1US_BASE,0);
+	IOWR_ALTERA_AVALON_TIMER_PERIODL(TIMER1US_BASE,0xffff);
+	IOWR_ALTERA_AVALON_TIMER_PERIODH(TIMER1US_BASE,0xffff);
+}
 static void ISR_Init(void)
 {
     static int buttonValue = 0;
@@ -273,7 +310,7 @@ static void ISR_Init(void)
 
     //initialise 500 ms timer isr
     xManageTimer = xTimerCreate("500msTimer", pdMS_TO_TICKS(500), pdTRUE, NULL, vTimerCallback);
-
+    //initialise program reponse measurement timer
     //keyboard initialise
         alt_up_ps2_dev * ps2_device = alt_up_ps2_open_dev(PS2_NAME);
 
@@ -340,6 +377,9 @@ static void T_VgaDisplay(void *pvParameters)
     /* Use the correct struct type for the message */
     FreqRocMessage receivedMsg; //frequencyHz, rocHzPerSec - both in queue
     StabilityMessage stabilityMsg; // 0 stable, 1 unstable
+    RecordMessage recordMessageCopy; //statistics
+    uint16_t currentTimeRunning;
+
 
     uint8_t currentStabilityState = 0;
 
@@ -347,9 +387,16 @@ static void T_VgaDisplay(void *pvParameters)
     double freqThreshold;
     double rocThreshold;
 
+
+
     char freqText[48];
     char rocText[48];
     char statusText[32];
+    char averageText[48];
+    char maximumText[48];
+    char minimumText[48];
+    char arrayText[48];
+    char timeText[48];
 
     (void)pvParameters; // Prevent compiler warning for unused parameter
 
@@ -410,10 +457,28 @@ static void T_VgaDisplay(void *pvParameters)
             i = (i + 1) % 100;
         }
 
+        for(int i =0; i < 5; i++){
+                	snprintf(arrayText, sizeof(arrayText), "Time: %.1d, %.1d, %.1d, %.1d, %.1d ", recordMessageCopy.response_time_queue[i]);
+                }
+
+
         //drains all latest stability changes
         while(xQueueReceive(Q_stabilityToVGA, &stabilityMsg, 0) == pdPASS){
             currentStabilityState = stabilityMsg.stability;
         }
+
+        // copies timing records for display
+        if (xSemaphoreTake(shared_record_mutex,portMAX_DELAY) == pdPASS)
+            	{
+            		recordMessageCopy.average = record_message.average;
+            		recordMessageCopy.maximum = record_message.maximum;
+            		recordMessageCopy.minimum =record_message.minimum;
+            		for(int i = 0; i < 5; i++){
+            			recordMessageCopy.response_time_queue[i] = record_message.response_time_queue[i];
+            		}
+            		xSemaphoreGive(shared_record_mutex);
+            	}
+            currentTimeRunning = (uint16_t)((xTaskGetTickCount() - initial_tick) * portTICK_PERIOD_MS/1000);
 
 
 
@@ -446,6 +511,36 @@ static void T_VgaDisplay(void *pvParameters)
         alt_up_char_buffer_string(char_buf, freqText, 4, 40);
         alt_up_char_buffer_string(char_buf, rocText, 4, 42);
         alt_up_char_buffer_string(char_buf, statusText, 4, 44);
+
+        //clear space for record statistics
+        alt_up_char_buffer_string(char_buf, "                                                ", 4, 46);
+        alt_up_char_buffer_string(char_buf, "                                        ", 4, 48);
+        alt_up_char_buffer_string(char_buf, "                                        ", 4, 50);
+        alt_up_char_buffer_string(char_buf, "                                        ", 4, 52);
+        alt_up_char_buffer_string(char_buf, "                                        ", 4, 5);
+
+        //averageText[48];
+           // char maximumText[48];
+            //char minimumText[48];
+           // char arrayText[48];
+        //printf("max:%d , min:%d , ave:%d \n",recordMessageCopy.maximum,recordMessageCopy.minimum,recordMessageCopy.average);
+        snprintf(averageText, sizeof(averageText), "Average Time: %.1d ms", recordMessageCopy.average);
+        snprintf(maximumText, sizeof(maximumText), "Maximum Time: %.1d ms", recordMessageCopy.maximum);
+        snprintf(minimumText, sizeof(minimumText), "Minimum Time: %.1d ms", recordMessageCopy.minimum);
+
+
+
+        snprintf(timeText, sizeof(timeText), "Elasped Runtime: %.1d s", currentTimeRunning);
+
+        alt_up_char_buffer_string(char_buf, arrayText, 4, 46);
+//        alt_up_char_buffer_string(char_buf, "                                                ", 4, 46);
+        alt_up_char_buffer_string(char_buf, maximumText, 4, 48);
+        alt_up_char_buffer_string(char_buf, minimumText, 4, 50);
+        alt_up_char_buffer_string(char_buf, averageText, 4, 52);
+        alt_up_char_buffer_string(char_buf, timeText, 4, 54);
+
+
+
 
         for(int j = 0; j < 99; j++){
             //Frequency plot
@@ -490,6 +585,7 @@ static void T_SwitchPolling(void *pvParameters)
 		   outMsg.switch_state = (uint8_t)uiSwitchValue;
 		   outMsg.shed_or_recover = 0;
 		   xQueueSendToBack(Q_newLoadCtrl, &outMsg, portMAX_DELAY);
+
 		   vTaskDelay(pdMS_TO_TICKS(1000));
 	  }
 }
@@ -517,7 +613,15 @@ static void T_StabilityMonitor(void *pvParameters){
 			uint8_t high_roc_flag = fabs(receivedMsg.rocHzPerSec) > RocThreshold;
 			outMsg.stability_state = low_freq_flag | high_roc_flag;
             vgaMsg.stability = outMsg.stability_state;
+            if (outMsg.stability_state & !waitingForTimer)
+            {
+            	//clear timer
+            	IOWR_ALTERA_AVALON_TIMER_CONTROL(TIMER1US_BASE,0);
+            	IOWR_ALTERA_AVALON_TIMER_STATUS(TIMER1US_BASE,0);
+            	//reload & start
+            	IOWR_ALTERA_AVALON_TIMER_CONTROL(TIMER1US_BASE,ALTERA_AVALON_TIMER_CONTROL_START_MSK|ALTERA_AVALON_TIMER_CONTROL_CONT_MSK);
 
+            }
 			xQueueSendToBack(Q_newLoadCtrl, &outMsg, portMAX_DELAY);
             xQueueSendToBack(Q_stabilityToVGA, &vgaMsg, portMAX_DELAY);
 		}
@@ -534,6 +638,8 @@ static void T_LoadCtrl(void *pvParameters)
 
     uint8_t oldEffective = 0;
     uint8_t newEffective = 0;
+    uint16_t low;
+    uint16_t high;
     for (;;)
     {
         if (xQueueReceive(Q_newLoadCtrl, &receivedMsg, portMAX_DELAY) == pdPASS)
@@ -592,8 +698,17 @@ static void T_LoadCtrl(void *pvParameters)
 
                             if (oldEffective != newEffective)
                             {
+                            	IOWR_ALTERA_AVALON_TIMER_SNAPL(TIMER1US_BASE,0);
+                            	low = IORD_ALTERA_AVALON_TIMER_SNAPL(TIMER1US_BASE);
+                            	high = IORD_ALTERA_AVALON_TIMER_SNAPH(TIMER1US_BASE);
+                            	first_respond_time = (((uint32_t)high << 16)| low)/1000;
+                            	printf("response tick:%d \n", first_respond_time);
+                            	updateRecordTime(first_respond_time);
+                            	waitingForTimer = 1;
                                 xTimerReset(xManageTimer, 0);
-                                waitingForTimer = 1;
+
+
+
                             }
                         }
                         else
@@ -765,4 +880,29 @@ uint8_t recoverHighestPriorityShed(uint8_t userMask, uint8_t shedMask)
         }
     }
     return shedMask;
+}
+void updateRecordTime(uint16_t response_time)
+{
+	uint16_t sum;
+	if (xSemaphoreTake(shared_record_mutex,portMAX_DELAY) == pdPASS)
+	{
+		//printf("response Time:%d\n",response_time);
+
+		//update lateset array
+		for (uint8_t counter = 4; counter>0 ; counter--)
+		{
+			record_message.response_time_queue[counter] = record_message.response_time_queue[counter-1];
+		}
+		record_message.response_time_queue[0] = response_time;
+		//calculate value
+		sum = 0;
+		for (uint8_t counter = 0; counter<5 ; counter++)
+		{
+			record_message.maximum = (record_message.maximum <record_message.response_time_queue[counter])? record_message.response_time_queue[counter]:record_message.maximum;
+			record_message.minimum = (record_message.minimum <record_message.response_time_queue[counter])? record_message.minimum:record_message.response_time_queue[counter];
+			sum+= record_message.response_time_queue[counter];
+		}
+		record_message.average = sum/5;
+		xSemaphoreGive(shared_record_mutex);
+	}
 }
