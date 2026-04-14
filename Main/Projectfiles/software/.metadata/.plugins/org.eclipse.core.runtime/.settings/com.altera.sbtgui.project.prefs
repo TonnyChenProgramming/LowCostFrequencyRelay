@@ -1,6 +1,5 @@
-<<<<<<< Updated upstream
-default_import_location=C\:\\Users\\cta10\\OneDrive\\Desktop\\FancyProject\\LowCostFrequencyRelay\\Main\\Projectfiles\\software\\LCFR_bsp
-=======
-default_import_location=C\:\\intelFPGA_lite\\18.1\\701\\LowCostFrequencyRelay\\Main\\Projectfiles\\software\\LCFR_bsp
->>>>>>> Stashed changes
+=\=\=\=\=\=\=
+<<<<<<<=Updated upstream
+>>>>>>>=Stashed changes
+default_import_location=C\:\\Users\\tche867\\Downloads\\LowCostFrequencyRelay\\Main\\Projectfiles\\software\\LCFR_bsp
 eclipse.preferences.version=1

@@ -2,10 +2,10 @@
 <sch:Settings xmlns:sch="http://www.altera.com/embeddedsw/bsp/schema">
         <BspType>hal</BspType>
         <BspVersion>default</BspVersion>
-        <BspGeneratedTimeStamp>7/04/2026 1:33:53 PM</BspGeneratedTimeStamp>
-        <BspGeneratedUnixTimeStamp>1775525633386</BspGeneratedUnixTimeStamp>
+        <BspGeneratedTimeStamp>14/04/2026 12:14:08 PM</BspGeneratedTimeStamp>
+        <BspGeneratedUnixTimeStamp>1776125648305</BspGeneratedUnixTimeStamp>
         <BspGeneratedLocation>C:\Users\tche867\Downloads\LowCostFrequencyRelay\Main\Projectfiles\software\LCFR_bsp</BspGeneratedLocation>
-        <BspSettingsFile>.\settings.bsp</BspSettingsFile>
+        <BspSettingsFile>settings.bsp</BspSettingsFile>
         <SopcDesignFile>..\..\nios2.sopcinfo</SopcDesignFile>
         <JdiFile>default</JdiFile>
         <Cpu>nios2</Cpu>

@@ -1,0 +1,6 @@
+12:11:50 **** Incremental Build of configuration Nios II for project FinalLCFR_bsp ****
+make all 
+make: *** No rule to make target `all'.  Stop.
+
+12:11:51 Build Finished (took 86ms)
+

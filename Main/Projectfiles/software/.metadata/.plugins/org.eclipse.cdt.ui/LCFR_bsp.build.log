@@ -1,14 +1,6 @@
-<<<<<<< Updated upstream
-12:30:15 **** Build of configuration Nios II for project LCFR_bsp ****
+12:25:31 **** Incremental Build of configuration Nios II for project LCFR_bsp ****
 make all 
 [BSP build complete]
 
-12:30:16 Build Finished (took 1s.547ms)
-=======
-16:36:19 **** Incremental Build of configuration Nios II for project LCFR_bsp ****
-make all 
-[BSP build complete]
-
-16:36:19 Build Finished (took 504ms)
->>>>>>> Stashed changes
+12:25:32 Build Finished (took 447ms)
 

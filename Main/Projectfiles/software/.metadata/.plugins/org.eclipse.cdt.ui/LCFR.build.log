@@ -1,17 +1,9 @@
-<<<<<<< Updated upstream
-13:16:44 **** Incremental Build of configuration Nios II for project LCFR ****
-=======
-22:23:55 **** Incremental Build of configuration Nios II for project LCFR ****
->>>>>>> Stashed changes
+15:04:05 **** Incremental Build of configuration Nios II for project LCFR ****
 make all 
 Info: Building ../LCFR_bsp/
-C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+C:/intelFPGA/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
 [BSP build complete]
 [LCFR build complete]
 
-<<<<<<< Updated upstream
-13:16:44 Build Finished (took 798ms)
-=======
-22:23:56 Build Finished (took 990ms)
->>>>>>> Stashed changes
+15:04:06 Build Finished (took 534ms)
 

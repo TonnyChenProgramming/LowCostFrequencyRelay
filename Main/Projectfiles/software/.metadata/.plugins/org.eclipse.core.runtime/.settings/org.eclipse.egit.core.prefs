@@ -1,6 +1,5 @@
-<<<<<<< Updated upstream
-GitRepositoriesView.GitDirectories=C\:\\Users\\cta10\\OneDrive\\Desktop\\FancyProject\\LowCostFrequencyRelay\\.git;
-=======
-GitRepositoriesView.GitDirectories=C\:\\intelFPGA_lite\\18.1\\701\\LowCostFrequencyRelay\\.git;
->>>>>>> Stashed changes
+=\=\=\=\=\=\=
+<<<<<<<=Updated upstream
+>>>>>>>=Stashed changes
+GitRepositoriesView.GitDirectories=C\:\\Users\\tche867\\Downloads\\LowCostFrequencyRelay\\.git;C\:\\intelFPGA_lite\\18.1\\701\\LowCostFrequencyRelay\\.git;
 eclipse.preferences.version=1
