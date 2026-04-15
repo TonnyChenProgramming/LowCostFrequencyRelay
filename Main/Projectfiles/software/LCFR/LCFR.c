@@ -66,6 +66,9 @@ static void Timer_Init(void);
 
 uint8_t addLowestPriorityShed(uint8_t userMask, uint8_t shedMask);
 uint8_t recoverHighestPriorityShed(uint8_t userMask, uint8_t shedMask);
+static inline uint32_t timer1us_now(void);
+static inline uint32_t timer1us_elapsed(uint32_t start, uint32_t end);
+
 void updateRecordTime(uint16_t response_time);
 // structure declaration
 typedef struct
@@ -153,6 +156,8 @@ static uint8_t currentNetworkUnstable = 0;
 static uint8_t prevNetworkUnstable = 0;
 static uint8_t waitingForTimer = 0; // a flag to idicate the first shed
 static uint8_t current_action = 0; //0 - invalid, 1 - to shed, 2 - to recover
+static uint32_t start;
+static uint32_t end;
 void freq_relay_function(void *context)
 {
     AdcCountMessage msg;
@@ -298,6 +303,11 @@ static void Timer_Init(void)
 	IOWR_ALTERA_AVALON_TIMER_STATUS(TIMER1US_BASE,0);
 	IOWR_ALTERA_AVALON_TIMER_PERIODL(TIMER1US_BASE,0xffff);
 	IOWR_ALTERA_AVALON_TIMER_PERIODH(TIMER1US_BASE,0xffff);
+    IOWR_ALTERA_AVALON_TIMER_CONTROL(
+        TIMER1US_BASE,
+        ALTERA_AVALON_TIMER_CONTROL_START_MSK |
+        ALTERA_AVALON_TIMER_CONTROL_CONT_MSK
+    );
 }
 static void ISR_Init(void)
 {
@@ -457,10 +467,14 @@ static void T_VgaDisplay(void *pvParameters)
             i = (i + 1) % 100;
         }
 
-        for(int i =0; i < 5; i++){
-                	snprintf(arrayText, sizeof(arrayText), "Time: %.1d, %.1d, %.1d, %.1d, %.1d ", recordMessageCopy.response_time_queue[i]);
-                }
-
+        snprintf(arrayText, sizeof(arrayText),
+            "Time: %d, %d, %d, %d, %d",
+            recordMessageCopy.response_time_queue[0],
+            recordMessageCopy.response_time_queue[1],
+            recordMessageCopy.response_time_queue[2],
+            recordMessageCopy.response_time_queue[3],
+            recordMessageCopy.response_time_queue[4]
+        );
 
         //drains all latest stability changes
         while(xQueueReceive(Q_stabilityToVGA, &stabilityMsg, 0) == pdPASS){
@@ -613,13 +627,9 @@ static void T_StabilityMonitor(void *pvParameters){
 			uint8_t high_roc_flag = fabs(receivedMsg.rocHzPerSec) > RocThreshold;
 			outMsg.stability_state = low_freq_flag | high_roc_flag;
             vgaMsg.stability = outMsg.stability_state;
-            if (outMsg.stability_state & !waitingForTimer)
+            if (outMsg.stability_state && !waitingForTimer)
             {
-            	//clear timer
-            	IOWR_ALTERA_AVALON_TIMER_CONTROL(TIMER1US_BASE,0);
-            	IOWR_ALTERA_AVALON_TIMER_STATUS(TIMER1US_BASE,0);
-            	//reload & start
-            	IOWR_ALTERA_AVALON_TIMER_CONTROL(TIMER1US_BASE,ALTERA_AVALON_TIMER_CONTROL_START_MSK|ALTERA_AVALON_TIMER_CONTROL_CONT_MSK);
+            	start = timer1us_now();
 
             }
 			xQueueSendToBack(Q_newLoadCtrl, &outMsg, portMAX_DELAY);
@@ -640,6 +650,7 @@ static void T_LoadCtrl(void *pvParameters)
     uint8_t newEffective = 0;
     uint16_t low;
     uint16_t high;
+    uint8_t first_shed_tag = 0;
     for (;;)
     {
         if (xQueueReceive(Q_newLoadCtrl, &receivedMsg, portMAX_DELAY) == pdPASS)
@@ -698,12 +709,8 @@ static void T_LoadCtrl(void *pvParameters)
 
                             if (oldEffective != newEffective)
                             {
-                            	IOWR_ALTERA_AVALON_TIMER_SNAPL(TIMER1US_BASE,0);
-                            	low = IORD_ALTERA_AVALON_TIMER_SNAPL(TIMER1US_BASE);
-                            	high = IORD_ALTERA_AVALON_TIMER_SNAPH(TIMER1US_BASE);
-                            	first_respond_time = (((uint32_t)high << 16)| low)/1000;
-                            	printf("response tick:%d \n", first_respond_time);
-                            	updateRecordTime(first_respond_time);
+
+                            	first_shed_tag = 1;
                             	waitingForTimer = 1;
                                 xTimerReset(xManageTimer, 0);
 
@@ -761,6 +768,16 @@ static void T_LoadCtrl(void *pvParameters)
 
                 xQueueSendToBack(Q_newRedLed, &effectiveLoadMask, portMAX_DELAY);
                 xQueueSendToBack(Q_newGreenLed, &greenMask, portMAX_DELAY);
+                if (first_shed_tag)
+                {
+                    end = (timer1us_now());
+                    printf("start tick: %u\n", (unsigned)start);
+                    printf("end tick: %u\n", (unsigned)end);
+                    first_respond_time = timer1us_elapsed(start,end)/1000.0;
+                    printf("response tick: %u\n", (unsigned)first_respond_time );
+                    updateRecordTime(first_respond_time);
+                    first_shed_tag = 0;
+                }
             }
         }
     }
@@ -883,7 +900,8 @@ uint8_t recoverHighestPriorityShed(uint8_t userMask, uint8_t shedMask)
 }
 void updateRecordTime(uint16_t response_time)
 {
-	uint16_t sum;
+	uint16_t average = 0;
+	uint16_t n = 0;
 	if (xSemaphoreTake(shared_record_mutex,portMAX_DELAY) == pdPASS)
 	{
 		//printf("response Time:%d\n",response_time);
@@ -895,14 +913,32 @@ void updateRecordTime(uint16_t response_time)
 		}
 		record_message.response_time_queue[0] = response_time;
 		//calculate value
-		sum = 0;
-		for (uint8_t counter = 0; counter<5 ; counter++)
-		{
-			record_message.maximum = (record_message.maximum <record_message.response_time_queue[counter])? record_message.response_time_queue[counter]:record_message.maximum;
-			record_message.minimum = (record_message.minimum <record_message.response_time_queue[counter])? record_message.minimum:record_message.response_time_queue[counter];
-			sum+= record_message.response_time_queue[counter];
-		}
-		record_message.average = sum/5;
+		record_message.maximum = (record_message.maximum <response_time)? response_time:record_message.maximum;
+		record_message.minimum = (record_message.minimum <response_time)? record_message.minimum:response_time;
+		n++;
+		record_message.average = record_message.average + (response_time - record_message.average)/n  ;
 		xSemaphoreGive(shared_record_mutex);
 	}
+}
+static inline uint32_t timer1us_now(void)
+{
+    uint16_t low, high;
+
+    IOWR_ALTERA_AVALON_TIMER_SNAPL(TIMER1US_BASE, 0);
+
+    low  = IORD_ALTERA_AVALON_TIMER_SNAPL(TIMER1US_BASE);
+    high = IORD_ALTERA_AVALON_TIMER_SNAPH(TIMER1US_BASE);
+
+    return ((uint32_t)high << 16) | low;
+}
+static inline uint32_t timer1us_elapsed(uint32_t start, uint32_t end)
+{
+    if (start >= end)
+    {
+        return start - end;
+    }
+    else
+    {
+        return start + (0xFFFFFFFFu - end) + 1u;
+    }
 }
