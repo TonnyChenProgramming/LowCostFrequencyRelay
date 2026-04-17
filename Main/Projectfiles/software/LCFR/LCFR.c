@@ -57,7 +57,6 @@ static void T_VgaDisplay(void *pvParameters);
 static void T_SwitchPolling(void *pvParameters);
 static void T_LoadCtrl(void *pvParameters);
 static void T_StabilityMonitor(void *pvParameters);
-static void T_RecordTimeDisplay (void *pvParameters);
 static void T_UpdateThreshold (void *pvParameters);
 static void T_UpdateRedLed(void *pvParameters);
 static void T_UpdateGreenLed(void *pvParameters);
@@ -68,6 +67,7 @@ uint8_t addLowestPriorityShed(uint8_t userMask, uint8_t shedMask);
 uint8_t recoverHighestPriorityShed(uint8_t userMask, uint8_t shedMask);
 static inline uint32_t timer1us_now(void);
 static inline uint32_t timer1us_elapsed(uint32_t start, uint32_t end);
+void updateFiveRecentFrequencyQueue(double current_frequency);
 
 void updateRecordTime(uint16_t response_time);
 // structure declaration
@@ -116,7 +116,6 @@ typedef struct
 
 typedef struct
 {
-	uint16_t response_time_queue[5];
 	uint16_t minimum;
 	uint16_t maximum;
 	uint16_t average;
@@ -140,6 +139,7 @@ static TimerHandle_t xManageTimer;
 static TickType_t initial_tick;
 static uint16_t first_respond_time;
 static RecordMessage record_message;
+static double five_recent_frequency[5] = {0.0,0.0,0.0,0.0,0.0};
 
 enum mode {
 	MAINTENANCE,
@@ -275,11 +275,6 @@ int main(void)
 
     //semaphore initialization
     shared_record_mutex = xSemaphoreCreateCounting( 99, 1 );
-    record_message.response_time_queue[0] = 0;
-    record_message.response_time_queue[1] = 0;
-    record_message.response_time_queue[2] = 0;
-    record_message.response_time_queue[3] = 0;
-    record_message.response_time_queue[4] = 0;
     record_message.maximum = 0;
     record_message.minimum = 1000;
     record_message.average = 0;
@@ -463,17 +458,18 @@ static void T_VgaDisplay(void *pvParameters)
         {
             // fills buffers with data
             freq[i] = receivedMsg.frequencyHz;
+            updateFiveRecentFrequencyQueue(receivedMsg.frequencyHz);
             ROCfreq[i] = receivedMsg.rocHzPerSec;
             i = (i + 1) % 100;
         }
 
         snprintf(arrayText, sizeof(arrayText),
-            "Time: %d, %d, %d, %d, %d",
-            recordMessageCopy.response_time_queue[0],
-            recordMessageCopy.response_time_queue[1],
-            recordMessageCopy.response_time_queue[2],
-            recordMessageCopy.response_time_queue[3],
-            recordMessageCopy.response_time_queue[4]
+            "frequency: %.2f, %.2f, %.2f, %.2f, %.2f",
+            five_recent_frequency[0],
+			five_recent_frequency[1],
+			five_recent_frequency[2],
+			five_recent_frequency[3],
+			five_recent_frequency[4]
         );
 
         //drains all latest stability changes
@@ -487,9 +483,6 @@ static void T_VgaDisplay(void *pvParameters)
             		recordMessageCopy.average = record_message.average;
             		recordMessageCopy.maximum = record_message.maximum;
             		recordMessageCopy.minimum =record_message.minimum;
-            		for(int i = 0; i < 5; i++){
-            			recordMessageCopy.response_time_queue[i] = record_message.response_time_queue[i];
-            		}
             		xSemaphoreGive(shared_record_mutex);
             	}
             currentTimeRunning = (uint16_t)((xTaskGetTickCount() - initial_tick) * portTICK_PERIOD_MS/1000);
@@ -814,6 +807,7 @@ static void T_UpdateThreshold(void *pvParameters){
 
     for(;;){
         if(xQueueReceive(Q_keyPress, &msg, portMAX_DELAY) == pdPASS){
+
             switch(msg.ascii){
                 case 'w':
                 case 'W':
@@ -905,13 +899,6 @@ void updateRecordTime(uint16_t response_time)
 	if (xSemaphoreTake(shared_record_mutex,portMAX_DELAY) == pdPASS)
 	{
 		//printf("response Time:%d\n",response_time);
-
-		//update lateset array
-		for (uint8_t counter = 4; counter>0 ; counter--)
-		{
-			record_message.response_time_queue[counter] = record_message.response_time_queue[counter-1];
-		}
-		record_message.response_time_queue[0] = response_time;
 		//calculate value
 		record_message.maximum = (record_message.maximum <response_time)? response_time:record_message.maximum;
 		record_message.minimum = (record_message.minimum <response_time)? record_message.minimum:response_time;
@@ -920,6 +907,15 @@ void updateRecordTime(uint16_t response_time)
 		xSemaphoreGive(shared_record_mutex);
 	}
 }
+void updateFiveRecentFrequencyQueue(double current_frequency)
+{
+	for (uint8_t counter = 4; counter>0 ; counter--)
+	{
+		five_recent_frequency[counter] = five_recent_frequency[counter-1];
+	}
+	five_recent_frequency[0] = current_frequency;
+}
+
 static inline uint32_t timer1us_now(void)
 {
     uint16_t low, high;

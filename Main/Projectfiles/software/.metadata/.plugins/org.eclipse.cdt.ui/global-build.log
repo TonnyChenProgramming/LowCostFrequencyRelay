@@ -1,7 +1,7 @@
-22:08:02 **** Incremental Build of configuration Nios II for project LCFR ****
+16:35:12 **** Incremental Build of configuration Nios II for project LCFR ****
 make all 
 Info: Building ../LCFR_bsp/
-C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+C:/HDL/Quartu18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
 [BSP build complete]
 Info: Compiling LCFR.c to obj/default/LCFR.o
 nios2-elf-gcc -xc -MP -MMD -c -I../LCFR_bsp//HAL/inc -I../LCFR_bsp/ -I../LCFR_bsp//drivers/inc  -pipe -D__hal__ -DALT_NO_INSTRUCTION_EMULATION -DALT_SINGLE_THREADED    -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o obj/default/LCFR.o LCFR.c
@@ -13,7 +13,7 @@ LCFR.c:176:16: warning: unused variable 'xHigherPriorityTaskWoken' [-Wunused-var
      BaseType_t xHigherPriorityTaskWoken = pdFALSE;
                 ^
 LCFR.c: In function 'ISR_Init':
-LCFR.c:340:49: warning: passing argument 3 of 'alt_irq_register' from incompatible pointer type [-Wincompatible-pointer-types]
+LCFR.c:335:49: warning: passing argument 3 of 'alt_irq_register' from incompatible pointer type [-Wincompatible-pointer-types]
      alt_irq_register(FREQUENCY_ANALYSER_IRQ, 0, freq_relay_function);
                                                  ^
 In file included from ../LCFR_bsp//HAL/inc/sys/alt_irq.h:218:0,
@@ -22,37 +22,33 @@ In file included from ../LCFR_bsp//HAL/inc/sys/alt_irq.h:218:0,
  extern int alt_irq_register (alt_u32 id, 
             ^
 LCFR.c: In function 'T_LoadCtrl':
-LCFR.c:652:14: warning: unused variable 'high' [-Wunused-variable]
+LCFR.c:645:14: warning: unused variable 'high' [-Wunused-variable]
      uint16_t high;
               ^
-LCFR.c:651:14: warning: unused variable 'low' [-Wunused-variable]
+LCFR.c:644:14: warning: unused variable 'low' [-Wunused-variable]
      uint16_t low;
               ^
 LCFR.c: In function 'updateRecordTime':
-LCFR.c:903:11: warning: unused variable 'average' [-Wunused-variable]
+LCFR.c:897:11: warning: unused variable 'average' [-Wunused-variable]
   uint16_t average = 0;
            ^
-LCFR.c: At top level:
-LCFR.c:60:13: warning: 'T_RecordTimeDisplay' declared 'static' but never defined [-Wunused-function]
- static void T_RecordTimeDisplay (void *pvParameters);
-             ^
 Info: Linking LCFR.elf
 nios2-elf-g++  -T'../LCFR_bsp//linker.x' -msys-crt0='../LCFR_bsp//obj/HAL/src/crt0.o' -msys-lib=hal_bsp -L../LCFR_bsp/   -Wl,-Map=LCFR.map   -O0 -g -Wall   -mhw-div -mhw-mul -mno-hw-mulx -mgpopt=global  -o LCFR.elf obj/default/FreeRTOS/croutine.o obj/default/FreeRTOS/event_groups.o obj/default/FreeRTOS/heap.o obj/default/FreeRTOS/list.o obj/default/FreeRTOS/port.o obj/default/FreeRTOS/queue.o obj/default/FreeRTOS/tasks.o obj/default/FreeRTOS/timers.o obj/default/LCFR.o obj/default/FreeRTOS/port_asm.o -lm -msys-lib=m
-nios2-elf-insert LCFR.elf --thread_model hal --cpu_name nios2 --qsys true --simulation_enabled false --id 7 --sidp 0x430f0 --timestamp 1393900972 --stderr_dev jtag_uart --stdin_dev jtag_uart --stdout_dev jtag_uart --sopc_system_name nios2 --quartus_project_dir "C:/intelFPGA_lite/18.1/701/LowCostFrequencyRelay/Main/Projectfiles" --sopcinfo C:/intelFPGA_lite/18.1/701/LowCostFrequencyRelay/Main/Projectfiles/software/LCFR_bsp/../../nios2.sopcinfo
+nios2-elf-insert LCFR.elf --thread_model hal --cpu_name nios2 --qsys true --simulation_enabled false --id 7 --sidp 0x430f0 --timestamp 1393900972 --stderr_dev jtag_uart --stdin_dev jtag_uart --stdout_dev jtag_uart --sopc_system_name nios2 --quartus_project_dir "C:/LocalProject/LowCostFrequencyRelay/Main/Projectfiles" --sopcinfo C:/LocalProject/LowCostFrequencyRelay/Main/Projectfiles/software/LCFR_bsp/../../nios2.sopcinfo
 Info: (LCFR.elf) 638 KBytes program size (code + initialized data).
 Info:            130559 KBytes free for stack + heap.
 Info: Creating LCFR.objdump
 nios2-elf-objdump --disassemble --syms --all-header --source LCFR.elf >LCFR.objdump
 [LCFR build complete]
-22:08:10 **** Build of configuration Nios II for project LCFR ****
+16:35:22 **** Build of configuration Nios II for project LCFR ****
 make all 
 Info: Building ../LCFR_bsp/
-C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+C:/HDL/Quartu18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
 [BSP build complete]
 [LCFR build complete]
-22:08:11 **** Incremental Build of configuration Nios II for project LCFR ****
+16:35:23 **** Incremental Build of configuration Nios II for project LCFR ****
 make all 
 Info: Building ../LCFR_bsp/
-C:/intelFPGA_lite/18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
+C:/HDL/Quartu18.1/nios2eds/bin/gnu/H-x86_64-mingw32/bin/make --no-print-directory -C ../LCFR_bsp/
 [BSP build complete]
 [LCFR build complete]
