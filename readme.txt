@@ -1,5 +1,3 @@
-README.txt
-
 Project: Low-Cost Frequency Relay
 Authors: Tonny Chen and Pranit
 Date: 17/04/2026
