@@ -21,6 +21,8 @@
 
 /* The parameters passed to the reg test tasks.  This is just done to check
  the parameter passing mechanism is working correctly. */
+#define LOW_FREQ_THRESHOLD 50.0
+#define HIGH_ROC_THRESHOLD 100.0
 #define SAMPLING_FREQ_HZ 16000.0
 #define MAXIMUM_LOAD_NUMBER 5
 #define PRODUCER_SWITCH    0
@@ -46,6 +48,7 @@
 #define T_StabilityMonitor_PRIORITY		4
 #define T_SwitchPolling_PRIORITY		4
 #define T_LoadCtrl_PRIORITY				5
+#define T_RecordTimeDisplay_PRIORITY	2
 #define T_UpdateThreshold_PRIORITY		3
 #define T_UpdateLed_PRIORITY			3
 
@@ -60,30 +63,12 @@ static void T_UpdateGreenLed(void *pvParameters);
 static void ISR_Init(void);
 static void Timer_Init(void);
 
-typedef enum
-{
-    LM_STATE_ALL_ACTIVE = 0,
-    LM_STATE_SOME_ACTIVE,
-    LM_STATE_NONE_ACTIVE
-} LoadManageState_t;
-
-typedef enum
-{
-    EVT_NONE = 0,
-    EVT_SWITCH_CHANGED,
-    EVT_BECOME_UNSTABLE,
-    EVT_BECOME_STABLE,
-    EVT_TIMER_SHED,
-    EVT_TIMER_RECOVER
-} LoadCtrlEvent_t;
-
 uint8_t addLowestPriorityShed(uint8_t userMask, uint8_t shedMask);
 uint8_t recoverHighestPriorityShed(uint8_t userMask, uint8_t shedMask);
 static inline uint32_t timer1us_now(void);
 static inline uint32_t timer1us_elapsed(uint32_t start, uint32_t end);
 void updateFiveRecentFrequencyQueue(double current_frequency);
-static LoadManageState_t prvGetLoadManageState(uint8_t userMask, uint8_t shedMask);
-static void prvPushLedOutputs(uint8_t userMask, uint8_t shedMask);
+
 void updateRecordTime(uint16_t response_time);
 // structure declaration
 typedef struct
@@ -166,9 +151,11 @@ static ThresholdMessage threshold;
 
 static uint8_t userLoadMask = 0;//used to represent user switch
 static uint8_t shedByRelayMask = 0; //used to represent the green lights under load managing state
+static uint8_t effectiveLoadMask = 0; //used to represent the red light under load managing state
 static uint8_t currentNetworkUnstable = 0;
 static uint8_t prevNetworkUnstable = 0;
 static uint8_t waitingForTimer = 0; // a flag to idicate the first shed
+static uint8_t current_action = 0; //0 - invalid, 1 - to shed, 2 - to recover
 static uint32_t start;
 static uint32_t end;
 void freq_relay_function(void *context)
@@ -193,6 +180,9 @@ void button_interrupts_function(void* context, alt_u32 id)
     // We store the edge capture value into the context variable
     *temp = IORD_ALTERA_AVALON_PIO_EDGE_CAP(PUSH_BUTTON_BASE);
 
+    // Mimic the Analyser: 320 count = 50Hz
+    msg.adcCount = 320;
+    //printf(".2%f", msg);
 
     //enum to swap modes
     if(current_system_mode == MAINTENANCE){
@@ -202,6 +192,7 @@ void button_interrupts_function(void* context, alt_u32 id)
     	current_system_mode = MAINTENANCE;
     	printf("MAINTENANCE\n");
     }
+
 
     // 3. Send to Queue (Use FromISR version)
     //xQueueSendToBackFromISR(Q_adcCount, &msg, &xHigherPriorityTaskWoken);
@@ -645,225 +636,142 @@ static void T_StabilityMonitor(void *pvParameters){
 static void T_LoadCtrl(void *pvParameters)
 {
     LoadCtrlMessage receivedMsg;
-    LoadManageState_t lmState = LM_STATE_ALL_ACTIVE;
-    uint8_t first_shed_tag = 0;
 
     (void) pvParameters;
+
+    uint8_t oldEffective = 0;
+    uint8_t newEffective = 0;
+    uint16_t low;
+    uint16_t high;
+    uint8_t first_shed_tag = 0;
     for (;;)
     {
-        if (xQueueReceive(Q_newLoadCtrl, &receivedMsg, portMAX_DELAY) != pdPASS)
+        if (xQueueReceive(Q_newLoadCtrl, &receivedMsg, portMAX_DELAY) == pdPASS)
         {
-            continue;
-        }
-
-        //parse the queue message
-        LoadCtrlEvent_t event = EVT_NONE;
-        if (receivedMsg.producer_id == PRODUCER_SWITCH)
-        {
-            uint8_t newMask = receivedMsg.switch_state & 0x1F;
-
-            if (current_system_mode == LOAD_MANAGING)
+            if (receivedMsg.producer_id == 0)
             {
-                /* In load managing mode:
-                 * user can turn OFF a load immediately,
-                 * but cannot force ON a shed load by switch.
-                 */
-                if ((userLoadMask == 0) && (shedByRelayMask == 0))
+                uint8_t newMask = receivedMsg.switch_state & 0x1F;
+
+                if (current_system_mode == LOAD_MANAGING)
                 {
-                    userLoadMask = newMask;
+                    if (userLoadMask == 0 && shedByRelayMask == 0)
+                    {
+                        userLoadMask = newMask;
+                    }
+                    else
+                    {
+                        userLoadMask = userLoadMask & newMask;
+                    }
                 }
                 else
                 {
-                    userLoadMask &= newMask;
+                    userLoadMask = newMask;
                 }
             }
-            else
+            else if (receivedMsg.producer_id == 1)
             {
-                /* In maintenance mode:
-                 * switch directly controls loads.
-                 */
-                userLoadMask = newMask;
+                currentNetworkUnstable = receivedMsg.stability_state;
+            }
+            else if (receivedMsg.producer_id == 2)
+            {
+                current_action = receivedMsg.shed_or_recover;
             }
 
-            event = EVT_SWITCH_CHANGED;
-            waitingForTimer = 0;
-        }
-        else if (receivedMsg.producer_id == PRODUCER_STABILITY)
-        {
-            prevNetworkUnstable = currentNetworkUnstable;
-            currentNetworkUnstable = receivedMsg.stability_state;
-
-            if ((prevNetworkUnstable == 0) && (currentNetworkUnstable == 1))
+            if (current_system_mode == MAINTENANCE)
             {
-                event = EVT_BECOME_UNSTABLE;
+                xTimerStop(xManageTimer, 0);
+                waitingForTimer = 0;
+                shedByRelayMask = 0;
+                effectiveLoadMask = userLoadMask & 0x1F;
+                uint8_t greenMask = 0;
+
+                xQueueSendToBack(Q_newRedLed, &effectiveLoadMask, portMAX_DELAY);
+                xQueueSendToBack(Q_newGreenLed, &greenMask, portMAX_DELAY);
             }
-            else if ((prevNetworkUnstable == 1) && (currentNetworkUnstable == 0))
+            else if (current_system_mode == LOAD_MANAGING)
             {
-                event = EVT_BECOME_STABLE;
-            }
-            else
-            {
-                event = EVT_NONE;
-            }
-        }
-        else if (receivedMsg.producer_id == PRODUCER_TIMER)
-        {
-            if (receivedMsg.shed_or_recover == 1)
-            {
-                event = EVT_TIMER_SHED;
-            }
-            else if (receivedMsg.shed_or_recover == 2)
-            {
-                event = EVT_TIMER_RECOVER;
-            }
-        }
-
-        //maintainance mode action
-        if (current_system_mode == MAINTENANCE)
-        {
-            xTimerStop(xManageTimer, 0);
-            waitingForTimer = 0;
-            shedByRelayMask = 0;
-
-            lmState = prvGetLoadManageState(userLoadMask, shedByRelayMask);
-            prvPushLedOutputs(userLoadMask, shedByRelayMask);
-            continue;
-        }
-
-
-
-        //load managing mode, determine currenet state and take action
-        lmState = prvGetLoadManageState(userLoadMask, shedByRelayMask);
-        first_shed_tag = 0;
-
-        switch (lmState)
-        {
-            case LM_STATE_ALL_ACTIVE:
-            {
-                switch (event)
+                if (receivedMsg.producer_id == 1)
                 {
-                    case EVT_BECOME_UNSTABLE:
+                    if (prevNetworkUnstable != currentNetworkUnstable)
                     {
+                        if (currentNetworkUnstable && !waitingForTimer)
+                        {
+                            oldEffective = userLoadMask & (~shedByRelayMask) & 0x1F;
+                            shedByRelayMask = addLowestPriorityShed(userLoadMask, shedByRelayMask);
+                            newEffective = userLoadMask & (~shedByRelayMask) & 0x1F;
+
+                            if (oldEffective != newEffective)
+                            {
+
+                            	first_shed_tag = 1;
+                            	waitingForTimer = 1;
+                                xTimerReset(xManageTimer, 0);
+
+
+
+                            }
+                        }
+                        else
+                        {
+                            xTimerReset(xManageTimer, 0);
+                            waitingForTimer = 1;
+                        }
+
+                        prevNetworkUnstable = currentNetworkUnstable;
+                    }
+                }
+                else if (receivedMsg.producer_id == 2)
+                {
+                    if (current_action == 1)
+                    {
+                        oldEffective = userLoadMask & (~shedByRelayMask) & 0x1F;
                         shedByRelayMask = addLowestPriorityShed(userLoadMask, shedByRelayMask);
-                        first_shed_tag = 1;
-                        waitingForTimer = 1;
-                        xTimerReset(xManageTimer, 0);
+                        newEffective = userLoadMask & (~shedByRelayMask) & 0x1F;
 
+                        if (oldEffective != newEffective) {
+                            xTimerReset(xManageTimer, 0);
+                            waitingForTimer = 1;
+                        } else {
+                            xTimerStop(xManageTimer, 0);
+                            waitingForTimer = 0;
+                        }
                     }
-
-                    case EVT_SWITCH_CHANGED:
-                    case EVT_BECOME_STABLE:
-                    case EVT_TIMER_RECOVER:
-                        waitingForTimer = 0;
-                        xTimerStop(xManageTimer, 0);
-                    case EVT_TIMER_SHED:
-                    default:
-                        /* no action */
-                        break;
-                }
-                break;
-            }
-
-            case LM_STATE_SOME_ACTIVE:
-            {
-                switch (event)
-                {
-                    case EVT_BECOME_UNSTABLE:
+                    else if (current_action == 2)
                     {
-                        //state change, reset timer
-                        waitingForTimer = 1;
-                        xTimerReset(xManageTimer, 0);
-                        break;
-                    }
-
-                    case EVT_BECOME_STABLE:
-                    {
-                        //state change, reset timer
-                        waitingForTimer = 1;
-                        xTimerReset(xManageTimer, 0);
-                        break;
-                    }
-
-                    case EVT_TIMER_SHED:
-                    {
-                    	//500ms arrive, shed timer
-                        shedByRelayMask = addLowestPriorityShed(userLoadMask, shedByRelayMask);
-                        waitingForTimer = 1;
-                        xTimerReset(xManageTimer, 0);
-                        break;
-                    }
-
-                    case EVT_TIMER_RECOVER:
-                    {
-                    	//500 ms arrive, recover timer
+                        uint8_t oldShed = shedByRelayMask;
                         shedByRelayMask = recoverHighestPriorityShed(userLoadMask, shedByRelayMask);
-                        waitingForTimer = 1;
-                        xTimerReset(xManageTimer, 0);
 
-                        break;
+                        if (oldShed != shedByRelayMask) {
+                            if ((shedByRelayMask & userLoadMask) != 0) {
+                                xTimerReset(xManageTimer, 0);
+                                waitingForTimer = 1;
+                            } else {
+                                xTimerStop(xManageTimer, 0);
+                                waitingForTimer = 0;
+                            }
+                        } else {
+                            xTimerStop(xManageTimer, 0);
+                            waitingForTimer = 0;
+                        }
                     }
-
-                    case EVT_SWITCH_CHANGED:
-                    default:
-                        /* no timer policy change here */
-                        break;
                 }
-                break;
-            }
 
-            case LM_STATE_NONE_ACTIVE:
-            {
-                switch (event)
+                effectiveLoadMask = userLoadMask & (~shedByRelayMask) & 0x1F;
+                uint8_t greenMask = shedByRelayMask & userLoadMask;
+
+                xQueueSendToBack(Q_newRedLed, &effectiveLoadMask, portMAX_DELAY);
+                xQueueSendToBack(Q_newGreenLed, &greenMask, portMAX_DELAY);
+                if (first_shed_tag)
                 {
-                    case EVT_BECOME_STABLE:
-                    {
-                    	//reset timer
-                        waitingForTimer = 1;
-                        xTimerReset(xManageTimer, 0);
-                        break;
-                    }
-
-                    case EVT_TIMER_RECOVER:
-                    {
-
-
-                        shedByRelayMask = recoverHighestPriorityShed(userLoadMask, shedByRelayMask);
-                        waitingForTimer = 1;
-                        xTimerReset(xManageTimer, 0);
-                        break;
-                    }
-
-                    case EVT_BECOME_UNSTABLE:
-                    {
-                    	//reset timer
-                        waitingForTimer = 1;
-                        xTimerReset(xManageTimer, 0);
-                        break;
-                    }
-                    case EVT_TIMER_SHED:
-                    case EVT_SWITCH_CHANGED:
-                    default:
-                        /* cannot shed further */
-                        break;
+                    end = (timer1us_now());
+                    printf("start tick: %u\n", (unsigned)start);
+                    printf("end tick: %u\n", (unsigned)end);
+                    first_respond_time = timer1us_elapsed(start,end)/1000.0;
+                    printf("response tick: %u\n", (unsigned)first_respond_time );
+                    updateRecordTime(first_respond_time);
+                    first_shed_tag = 0;
                 }
-                break;
             }
-
-            default:
-                break;
-        }
-
-        /* -------------------------------------------------
-         * 4) Output logic (Moore output)
-         * ------------------------------------------------- */
-        lmState = prvGetLoadManageState(userLoadMask, shedByRelayMask);
-        prvPushLedOutputs(userLoadMask, shedByRelayMask);
-
-        if (first_shed_tag)
-        {
-            end = timer1us_now();
-            first_respond_time = timer1us_elapsed(start, end) / 1000.0;
-            updateRecordTime(first_respond_time);
         }
     }
 }
@@ -983,32 +891,6 @@ uint8_t recoverHighestPriorityShed(uint8_t userMask, uint8_t shedMask)
         }
     }
     return shedMask;
-}
-static LoadManageState_t prvGetLoadManageState(uint8_t userMask, uint8_t shedMask)
-{
-    uint8_t effective = userMask & (~shedMask) & 0x1F;
-
-    if (effective == 0x00)
-    {
-        return LM_STATE_NONE_ACTIVE;
-    }
-    else if (effective == (userMask & 0x1F))
-    {
-        return LM_STATE_ALL_ACTIVE;
-    }
-    else
-    {
-        return LM_STATE_SOME_ACTIVE;
-    }
-}
-static void prvPushLedOutputs(uint8_t userMask, uint8_t shedMask)
-{
-    uint8_t redMask   = userMask & (~shedMask) & 0x1F;   // active loads
-    uint8_t greenMask = shedMask & userMask & 0x1F;      // shed loads
-
-
-    xQueueSendToBack(Q_newRedLed, &redMask, portMAX_DELAY);
-    xQueueSendToBack(Q_newGreenLed, &greenMask, portMAX_DELAY);
 }
 void updateRecordTime(uint16_t response_time)
 {

@@ -686,7 +686,6 @@ static void T_LoadCtrl(void *pvParameters)
             }
 
             event = EVT_SWITCH_CHANGED;
-            waitingForTimer = 0;
         }
         else if (receivedMsg.producer_id == PRODUCER_STABILITY)
         {
@@ -754,8 +753,6 @@ static void T_LoadCtrl(void *pvParameters)
                     case EVT_SWITCH_CHANGED:
                     case EVT_BECOME_STABLE:
                     case EVT_TIMER_RECOVER:
-                        waitingForTimer = 0;
-                        xTimerStop(xManageTimer, 0);
                     case EVT_TIMER_SHED:
                     default:
                         /* no action */

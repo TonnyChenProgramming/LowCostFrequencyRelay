@@ -1,0 +1,44 @@
+typedef enum
+{
+    LM_STATE_ALL_ACTIVE = 0,
+    LM_STATE_SOME_ACTIVE,
+    LM_STATE_NONE_ACTIVE
+} LoadManageState_t;
+
+typedef enum
+{
+    EVT_NONE = 0,
+    EVT_SWITCH_CHANGED,
+    EVT_BECOME_UNSTABLE,
+    EVT_BECOME_STABLE,
+    EVT_TIMER_SHED,
+    EVT_TIMER_RECOVER
+} LoadCtrlEvent_t;
+static LoadManageState_t prvGetLoadManageState(uint8_t userMask, uint8_t shedMask)
+{
+    uint8_t effective = userMask & (~shedMask) & 0x1F;
+
+    if (effective == 0x00)
+    {
+        return LM_STATE_NONE_ACTIVE;
+    }
+    else if (effective == (userMask & 0x1F))
+    {
+        return LM_STATE_ALL_ACTIVE;
+    }
+    else
+    {
+        return LM_STATE_SOME_ACTIVE;
+    }
+}
+
+static void prvPushLedOutputs(uint8_t userMask, uint8_t shedMask)
+{
+    uint8_t redMask   = userMask & (~shedMask) & 0x1F;   // active loads
+    uint8_t greenMask = shedMask & userMask & 0x1F;      // shed loads
+
+    effectiveLoadMask = redMask;
+
+    xQueueSendToBack(Q_newRedLed, &redMask, portMAX_DELAY);
+    xQueueSendToBack(Q_newGreenLed, &greenMask, portMAX_DELAY);
+}

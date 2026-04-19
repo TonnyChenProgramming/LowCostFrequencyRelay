@@ -21,6 +21,8 @@
 
 /* The parameters passed to the reg test tasks.  This is just done to check
  the parameter passing mechanism is working correctly. */
+#define LOW_FREQ_THRESHOLD 50.0
+#define HIGH_ROC_THRESHOLD 100.0
 #define SAMPLING_FREQ_HZ 16000.0
 #define MAXIMUM_LOAD_NUMBER 5
 #define PRODUCER_SWITCH    0
@@ -46,6 +48,7 @@
 #define T_StabilityMonitor_PRIORITY		4
 #define T_SwitchPolling_PRIORITY		4
 #define T_LoadCtrl_PRIORITY				5
+#define T_RecordTimeDisplay_PRIORITY	2
 #define T_UpdateThreshold_PRIORITY		3
 #define T_UpdateLed_PRIORITY			3
 
@@ -60,30 +63,12 @@ static void T_UpdateGreenLed(void *pvParameters);
 static void ISR_Init(void);
 static void Timer_Init(void);
 
-typedef enum
-{
-    LM_STATE_ALL_ACTIVE = 0,
-    LM_STATE_SOME_ACTIVE,
-    LM_STATE_NONE_ACTIVE
-} LoadManageState_t;
-
-typedef enum
-{
-    EVT_NONE = 0,
-    EVT_SWITCH_CHANGED,
-    EVT_BECOME_UNSTABLE,
-    EVT_BECOME_STABLE,
-    EVT_TIMER_SHED,
-    EVT_TIMER_RECOVER
-} LoadCtrlEvent_t;
-
 uint8_t addLowestPriorityShed(uint8_t userMask, uint8_t shedMask);
 uint8_t recoverHighestPriorityShed(uint8_t userMask, uint8_t shedMask);
 static inline uint32_t timer1us_now(void);
 static inline uint32_t timer1us_elapsed(uint32_t start, uint32_t end);
 void updateFiveRecentFrequencyQueue(double current_frequency);
-static LoadManageState_t prvGetLoadManageState(uint8_t userMask, uint8_t shedMask);
-static void prvPushLedOutputs(uint8_t userMask, uint8_t shedMask);
+
 void updateRecordTime(uint16_t response_time);
 // structure declaration
 typedef struct
@@ -111,6 +96,22 @@ typedef	struct
 	uint8_t shed_or_recover; // 0 - invalid, 1 - shed, 2 - recover
 } LoadCtrlMessage;
 
+typedef enum
+{
+    LM_STATE_ALL_ACTIVE = 0,
+    LM_STATE_SOME_ACTIVE,
+    LM_STATE_NONE_ACTIVE
+} LoadManageState_t;
+
+typedef enum
+{
+    EVT_NONE = 0,
+    EVT_SWITCH_CHANGED,
+    EVT_BECOME_UNSTABLE,
+    EVT_BECOME_STABLE,
+    EVT_TIMER_SHED,
+    EVT_TIMER_RECOVER
+} LoadCtrlEvent_t;
 typedef struct
 {
     unsigned int x1;
@@ -166,9 +167,11 @@ static ThresholdMessage threshold;
 
 static uint8_t userLoadMask = 0;//used to represent user switch
 static uint8_t shedByRelayMask = 0; //used to represent the green lights under load managing state
+static uint8_t effectiveLoadMask = 0; //used to represent the red light under load managing state
 static uint8_t currentNetworkUnstable = 0;
 static uint8_t prevNetworkUnstable = 0;
 static uint8_t waitingForTimer = 0; // a flag to idicate the first shed
+static uint8_t current_action = 0; //0 - invalid, 1 - to shed, 2 - to recover
 static uint32_t start;
 static uint32_t end;
 void freq_relay_function(void *context)
@@ -193,6 +196,9 @@ void button_interrupts_function(void* context, alt_u32 id)
     // We store the edge capture value into the context variable
     *temp = IORD_ALTERA_AVALON_PIO_EDGE_CAP(PUSH_BUTTON_BASE);
 
+    // Mimic the Analyser: 320 count = 50Hz
+    msg.adcCount = 320;
+    //printf(".2%f", msg);
 
     //enum to swap modes
     if(current_system_mode == MAINTENANCE){
@@ -202,6 +208,7 @@ void button_interrupts_function(void* context, alt_u32 id)
     	current_system_mode = MAINTENANCE;
     	printf("MAINTENANCE\n");
     }
+
 
     // 3. Send to Queue (Use FromISR version)
     //xQueueSendToBackFromISR(Q_adcCount, &msg, &xHigherPriorityTaskWoken);
@@ -656,7 +663,6 @@ static void T_LoadCtrl(void *pvParameters)
             continue;
         }
 
-        //parse the queue message
         LoadCtrlEvent_t event = EVT_NONE;
         if (receivedMsg.producer_id == PRODUCER_SWITCH)
         {
@@ -686,7 +692,6 @@ static void T_LoadCtrl(void *pvParameters)
             }
 
             event = EVT_SWITCH_CHANGED;
-            waitingForTimer = 0;
         }
         else if (receivedMsg.producer_id == PRODUCER_STABILITY)
         {
@@ -717,8 +722,9 @@ static void T_LoadCtrl(void *pvParameters)
                 event = EVT_TIMER_RECOVER;
             }
         }
-
-        //maintainance mode action
+        /* -------------------------------------------------
+         * 2) MAINTENANCE mode = direct output mode
+         * ------------------------------------------------- */
         if (current_system_mode == MAINTENANCE)
         {
             xTimerStop(xManageTimer, 0);
@@ -732,7 +738,9 @@ static void T_LoadCtrl(void *pvParameters)
 
 
 
-        //load managing mode, determine currenet state and take action
+        /* -------------------------------------------------
+         * 3) LOAD_MANAGING mode: Moore actions by state
+         * ------------------------------------------------- */
         lmState = prvGetLoadManageState(userLoadMask, shedByRelayMask);
         first_shed_tag = 0;
 
@@ -744,18 +752,29 @@ static void T_LoadCtrl(void *pvParameters)
                 {
                     case EVT_BECOME_UNSTABLE:
                     {
-                        shedByRelayMask = addLowestPriorityShed(userLoadMask, shedByRelayMask);
-                        first_shed_tag = 1;
-                        waitingForTimer = 1;
-                        xTimerReset(xManageTimer, 0);
+                        uint8_t oldEffective = userLoadMask & (~shedByRelayMask) & 0x1F;
 
+                        shedByRelayMask = addLowestPriorityShed(userLoadMask, shedByRelayMask);
+
+                        uint8_t newEffective = userLoadMask & (~shedByRelayMask) & 0x1F;
+
+                        if (oldEffective != newEffective)
+                        {
+                            first_shed_tag = 1;
+                            waitingForTimer = 1;
+                            xTimerReset(xManageTimer, 0);
+                        }
+                        else
+                        {
+                            waitingForTimer = 0;
+                            xTimerStop(xManageTimer, 0);
+                        }
+                        break;
                     }
 
                     case EVT_SWITCH_CHANGED:
                     case EVT_BECOME_STABLE:
                     case EVT_TIMER_RECOVER:
-                        waitingForTimer = 0;
-                        xTimerStop(xManageTimer, 0);
                     case EVT_TIMER_SHED:
                     default:
                         /* no action */
@@ -770,7 +789,7 @@ static void T_LoadCtrl(void *pvParameters)
                 {
                     case EVT_BECOME_UNSTABLE:
                     {
-                        //state change, reset timer
+                        /* stay unstable for 500ms -> more shedding */
                         waitingForTimer = 1;
                         xTimerReset(xManageTimer, 0);
                         break;
@@ -778,7 +797,7 @@ static void T_LoadCtrl(void *pvParameters)
 
                     case EVT_BECOME_STABLE:
                     {
-                        //state change, reset timer
+                        /* stay stable for 500ms -> recovery */
                         waitingForTimer = 1;
                         xTimerReset(xManageTimer, 0);
                         break;
@@ -786,20 +805,41 @@ static void T_LoadCtrl(void *pvParameters)
 
                     case EVT_TIMER_SHED:
                     {
-                    	//500ms arrive, shed timer
+                        uint8_t oldEffective = userLoadMask & (~shedByRelayMask) & 0x1F;
+
                         shedByRelayMask = addLowestPriorityShed(userLoadMask, shedByRelayMask);
-                        waitingForTimer = 1;
-                        xTimerReset(xManageTimer, 0);
+
+                        uint8_t newEffective = userLoadMask & (~shedByRelayMask) & 0x1F;
+
+                        if (oldEffective != newEffective)
+                        {
+                            waitingForTimer = 1;
+                            xTimerReset(xManageTimer, 0);
+                        }
+                        else
+                        {
+                            waitingForTimer = 0;
+                            xTimerStop(xManageTimer, 0);
+                        }
                         break;
                     }
 
                     case EVT_TIMER_RECOVER:
                     {
-                    	//500 ms arrive, recover timer
-                        shedByRelayMask = recoverHighestPriorityShed(userLoadMask, shedByRelayMask);
-                        waitingForTimer = 1;
-                        xTimerReset(xManageTimer, 0);
+                        uint8_t oldShed = shedByRelayMask;
 
+                        shedByRelayMask = recoverHighestPriorityShed(userLoadMask, shedByRelayMask);
+
+                        if (oldShed != shedByRelayMask)
+                        {
+                            waitingForTimer = 1;
+                            xTimerReset(xManageTimer, 0);
+                        }
+                        else
+                        {
+                            waitingForTimer = 0;
+                            xTimerStop(xManageTimer, 0);
+                        }
                         break;
                     }
 
@@ -817,7 +857,6 @@ static void T_LoadCtrl(void *pvParameters)
                 {
                     case EVT_BECOME_STABLE:
                     {
-                    	//reset timer
                         waitingForTimer = 1;
                         xTimerReset(xManageTimer, 0);
                         break;
@@ -825,21 +864,24 @@ static void T_LoadCtrl(void *pvParameters)
 
                     case EVT_TIMER_RECOVER:
                     {
-
+                        uint8_t oldShed = shedByRelayMask;
 
                         shedByRelayMask = recoverHighestPriorityShed(userLoadMask, shedByRelayMask);
-                        waitingForTimer = 1;
-                        xTimerReset(xManageTimer, 0);
+
+                        if (oldShed != shedByRelayMask)
+                        {
+                            waitingForTimer = 1;
+                            xTimerReset(xManageTimer, 0);
+                        }
+                        else
+                        {
+                            waitingForTimer = 0;
+                            xTimerStop(xManageTimer, 0);
+                        }
                         break;
                     }
 
                     case EVT_BECOME_UNSTABLE:
-                    {
-                    	//reset timer
-                        waitingForTimer = 1;
-                        xTimerReset(xManageTimer, 0);
-                        break;
-                    }
                     case EVT_TIMER_SHED:
                     case EVT_SWITCH_CHANGED:
                     default:
@@ -1006,6 +1048,7 @@ static void prvPushLedOutputs(uint8_t userMask, uint8_t shedMask)
     uint8_t redMask   = userMask & (~shedMask) & 0x1F;   // active loads
     uint8_t greenMask = shedMask & userMask & 0x1F;      // shed loads
 
+    effectiveLoadMask = redMask;
 
     xQueueSendToBack(Q_newRedLed, &redMask, portMAX_DELAY);
     xQueueSendToBack(Q_newGreenLed, &greenMask, portMAX_DELAY);
